@@ -1,0 +1,7 @@
+credentials/
+.env
+out/
+work/
+still_live
+__pycache__/
+*.pyc

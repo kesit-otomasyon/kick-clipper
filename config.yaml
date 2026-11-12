@@ -1,0 +1,23 @@
+# Kick canlı yayın kesit sistemi - ayarlar
+
+streamers:            # kick.com/<ad>  (izin aldığın yayıncılar)
+  - eray
+  - rraenee
+
+youtube_channel: clips          # credentials/token_clips.json (GitHub secret YT_TOKEN_CLIPS)
+
+clips:
+  per_streamer_per_day: 3       # YouTube günde ~6 yükleme izin veriyor (proje kotası 10.000 / 1.600)
+  per_day_total: 6
+  cooldown_s: 240               # iki kesit arasında en az bu kadar saniye
+  before_s: 30                  # patlamadan önceki kısım (olayın başı)
+  after_s: 15                   # patlamadan sonraki kısım (tepki)
+  burst_db: 9.0                 # sesin, son 2 dakikanın ortancasından bu kadar dB yükselmesi = patlama
+  min_seconds_live: 300         # yayının ilk 5 dakikası (açılış, müzik) atlanır
+  publish_delay_min: 15         # yüklemeden bu kadar dakika sonra yayına girer
+
+blocked_categories: [Slots & Casino, Slots, Casino, Gambling, Pools, Hot Tubs & Bikinis]
+
+llm:
+  gemini: [gemini-flash-latest, gemini-3.5-flash, gemini-flash-lite-latest]
+  groq: openai/gpt-oss-120b
