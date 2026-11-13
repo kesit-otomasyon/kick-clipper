@@ -141,6 +141,13 @@ def main():
 
             if time.time() > next_check:  # still live? same stream?
                 next_check = time.time() + 120
+                if len(db) > 10:  # heartbeat: how much was recorded and how loud it got
+                    w = db[-120:]
+                    base = float(np.median(w))
+                    top = max(float(np.mean(w[i - 4:i])) - base for i in range(4, len(w) + 1))
+                    log(f"durum: {len(rec.pieces)} parça, {len(db)} sn ses, son 2 dk en büyük sıçrama +{top:.1f} dB")
+                else:
+                    log(f"durum: henüz ses yok ({len(rec.pieces)} parça)")
                 now = kick.live_info(who)
                 offline = offline + 1 if not now or now["id"] != info["id"] else 0
                 if offline >= 2:
