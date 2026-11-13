@@ -16,6 +16,14 @@ clips:
   min_seconds_live: 300         # yayının ilk 5 dakikası (açılış, müzik) atlanır
   publish_delay_min: 15         # yüklemeden bu kadar dakika sonra yayına girer
 
+# Ana yöntem (2026-11-14): izleyicilerin Kick'te aldığı kesitler. Her 15 dakikada yeni olanlar alınır.
+viewer_clips:
+  per_run: 2                    # bir çalışmada yayıncı başına en fazla bu kadar yeni kesit
+  min_views: 5                  # en az bu kadar izlenmiş kesitler (boş/test kesitlerini eler)
+  min_seconds: 8
+  max_seconds: 60
+  after_stream_hours: 3         # yayın bittikten sonra bu kadar saat daha yeni kesitlere bakılır
+
 blocked_categories: [Slots & Casino, Slots, Casino, Gambling, Pools, Hot Tubs & Bikinis]
 
 llm:
