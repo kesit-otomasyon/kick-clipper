@@ -36,7 +36,10 @@ def find_facecam(src: Path, dur: float):
         if not ok:
             continue
         _, faces = det.detect(fr)
-        faces = [f[:4] for f in (faces if faces is not None else []) if f[3] >= H * 0.06]
+        # a webcam is a small box near an edge; a big face in the middle is a video/game on screen
+        # (an eray test picked a GTA artwork face as the "webcam")
+        faces = [f[:4] for f in (faces if faces is not None else [])
+                 if H * 0.06 <= f[3] <= H * 0.22 and not (W * 0.3 < f[0] + f[2] / 2 < W * 0.7)]
         if faces:
             hits.append(max(faces, key=lambda f: f[2] * f[3]))
     cap.release()
