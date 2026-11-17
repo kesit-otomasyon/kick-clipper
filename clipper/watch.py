@@ -220,6 +220,8 @@ def main():
                 peak, why = pending
                 pending, last_clip = None, peak
                 sec = int(peak - started)
+                if not args.dry_run:  # viewer clips may have uploaded this moment meanwhile
+                    done |= youtube.moments_done(youtube.recent_uploads(channel))
                 if any(sid == info["id"] and abs(s - sec) < 60 for sid, s in done):
                     log("bu an zaten yüklenmiş, atlandı.")
                     continue

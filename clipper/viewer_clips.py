@@ -27,6 +27,16 @@ def stream_clips(slug: str, stream_id: str) -> list[dict]:
     return [c for c in r.json().get("clips", []) if str(c.get("livestream_id")) == str(stream_id)]
 
 
+def clip_seconds(k: dict, started: str) -> tuple[int, int]:
+    """(start, end) of a viewer clip in seconds from the stream start; a clip ends when it is made."""
+    t0 = datetime.fromisoformat(started.replace(" ", "T").replace("Z", "+00:00"))
+    if t0.tzinfo is None:
+        t0 = t0.replace(tzinfo=timezone.utc)
+    made = datetime.fromisoformat(k["created_at"].replace("Z", "+00:00"))
+    end = int((made - t0).total_seconds())
+    return end - int(k.get("duration") or 0), end
+
+
 def latest_stream(slug: str, within_h: float):
     """The live stream, or the last one if it ended less than `within_h` hours ago."""
     live = kick.live_info(slug)
@@ -65,6 +75,7 @@ def main():
     uploads = [] if args.dry_run else youtube.recent_uploads(channel)
     done = {line.split(":", 1)[1].strip() for u in uploads for line in u["description"].splitlines()
             if line.startswith("clip:")}
+    moments = youtube.moments_done(uploads)  # moments the live watcher (or an earlier clip) already uploaded
     today = uploads[:youtube.uploads_today(uploads)]
     total_left = c["per_day_total"] - len(today)
     llm = LLM(cfg)
@@ -91,6 +102,15 @@ def main():
                  if k["id"] not in done and vc["min_seconds"] <= k.get("duration", 0) <= vc["max_seconds"]
                  and k.get("views", 0) >= vc["min_views"]]
         clips.sort(key=score, reverse=True)
+        fresh = []
+        for k in clips:
+            a, b = clip_seconds(k, info["started"])
+            if any(sid == info["id"] and a - 30 <= sec <= b + 15 for sid, sec in moments):
+                log(f"{k['id']}: bu an zaten yüklendi (canlı izleme), atlandı.")
+                done.add(k["id"])
+            else:
+                fresh.append(k)
+        clips = fresh
         log(f"{who}: {info['title'][:50]} | {info['category']} | uygun yeni kesit: {len(clips)}")
         for k in clips[:min(left, vc["per_run"])]:
             stamp = f"{who}_{k['id']}"
@@ -128,7 +148,8 @@ def main():
             raw.unlink(missing_ok=True)
             title = meta.get("title") or f"{who} yayınından #shorts"
             desc = (f"{who} canlı yayınından bir an ({info['category']}).\n"
-                    f"Yayıncı: https://kick.com/{who}\n\n#{who} #kick #shorts\n\nclip:{k['id']}")
+                    f"Yayıncı: https://kick.com/{who}\n\n#{who} #kick #shorts\n\nclip:{k['id']}\n"
+                    f"moment:{info['id']}:{sum(clip_seconds(k, info['started'])) // 2}")
             (out / f"{stamp}.json").write_text(json.dumps({"title": title, "desc": desc, "kick_views": k.get("views"),
                                                            "kick_title": k.get("title"), **meta},
                                                           ensure_ascii=False, indent=1), encoding="utf-8")

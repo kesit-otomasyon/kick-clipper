@@ -1,8 +1,8 @@
 name: Live clips
 
 on:
-  # schedule (turned on after the test run is approved):
-  #   - cron: "4,19,34,49 * * * *"   # every 15 min
+  schedule:
+    - cron: "4,19,34,49 * * * *"   # every 15 min
   workflow_dispatch:
     inputs:
       streamer:
