@@ -13,6 +13,13 @@ clips:
   before_s: 30                  # patlamadan önceki kısım (olayın başı)
   after_s: 15                   # patlamadan sonraki kısım (tepki)
   burst_db: 9.0                 # sesin, son 2 dakikanın ortancasından bu kadar dB yükselmesi = patlama
+  # sohbet patlaması (ana sinyal): son 10 sn, son 5 dakikanın ortancasıyla karşılaştırılır
+  chat_window_s: 10
+  chat_ratio: 3.0               # skor (mesaj hızı x gülme/şaşırma oranı) tabanın bu kadar katı
+  chat_min_hype_users: 4        # en az bu kadar farklı kişi gülüyor/şaşırıyor (tek kişinin spamı sayılmaz)
+  chat_min_hype: 0.35           # yazanların en az bu oranı gülüyor/şaşırıyor
+  chat_clip_users: 3            # 20 sn içinde bu kadar farklı kişi "kesit/clip" yazarsa direkt patlama
+  chat_delay_s: 12              # izleyiciler olaydan bu kadar sonra yazıyor; an bu kadar geriye alınır
   min_seconds_live: 300         # yayının ilk 5 dakikası (açılış, müzik) atlanır
   publish_delay_min: 15         # yüklemeden bu kadar dakika sonra yayına girer
 

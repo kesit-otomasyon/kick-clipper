@@ -1,5 +1,6 @@
-"""Watch one live Kick stream and turn its loudest moments (shouting, laughing) into Shorts, while the
-stream is still on. Runs on a GitHub runner: the stream is recorded there in 5-second pieces (only the
+"""Watch one live Kick stream and turn its big moments into Shorts while the stream is still on.
+A moment is found two ways: the live chat suddenly floods with laughing / shocked messages or people
+asking for a clip (main signal), or the stream audio jumps (shouting, laughing). Runs on a GitHub runner: the stream is recorded there in 5-second pieces (only the
 last few minutes are kept), nothing is downloaded to the user's PC.
 
 python -m clipper.watch <streamer> [--hours 5.6] [--dry-run]"""
@@ -15,6 +16,7 @@ import numpy as np
 import yaml
 
 from . import kick, render, youtube
+from .chat import ChatMeter
 from .llm import LLM
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -104,6 +106,9 @@ def main():
     cfg = yaml.safe_load((ROOT / "config.yaml").read_text(encoding="utf-8"))
     c = cfg["clips"]
     who = args.streamer
+    if who not in cfg["streamers"] and not args.dry_run:
+        log(f"{who} izin verilen yayıncılar listesinde değil; sadece --dry-run ile denenebilir.")
+        return
     info = kick.live_info(who)
     if not info:
         log(f"{who} yayında değil.")
@@ -123,6 +128,7 @@ def main():
     out = ROOT / "out"
     out.mkdir(exist_ok=True)
     rec = Recorder(info["playback_url"], ROOT / "work" / who)
+    meter = ChatMeter(info["channel_id"]).start()
     db, walls = [], []          # dB per second and its wall-clock time
     last_clip, pending = 0.0, None
     deadline = time.time() + args.hours * 3600
@@ -148,6 +154,9 @@ def main():
                     log(f"durum: {len(rec.pieces)} parça, {len(db)} sn ses, son 2 dk en büyük sıçrama +{top:.1f} dB")
                 else:
                     log(f"durum: henüz ses yok ({len(rec.pieces)} parça)")
+                w = meter.window(time.time() - 62, time.time() - 2)
+                log(f"sohbet: {w['rate']:.1f} mesaj/sn, {w['users']} kişi, %{w['hype'] * 100:.0f} gülme/şaşırma, "
+                    f"istek {meter.ok} ok / {meter.errors} hata")
                 now = kick.live_info(who)
                 offline = offline + 1 if not now or now["id"] != info["id"] else 0
                 if offline >= 2:
@@ -162,11 +171,22 @@ def main():
                 in_stream = peak_wall - started
                 if (burst >= c["burst_db"] and peak_wall - last_clip > c["cooldown_s"]
                         and in_stream > c["min_seconds_live"]):
-                    pending = (peak_wall, burst)
-                    log(f"patlama: +{burst:.1f} dB (yayının {in_stream / 60:.0f}. dakikası)")
+                    pending = (peak_wall, f"ses +{burst:.1f} dB")
+                    log(f"patlama (ses): +{burst:.1f} dB (yayının {in_stream / 60:.0f}. dakikası)")
+
+            # a burst in chat: viewers react a few seconds after the moment, so the peak is moved back
+            if pending is None:
+                now = time.time()
+                b = meter.burst(now, c)
+                peak_wall = now - c.get("chat_delay_s", 12)
+                if (b and peak_wall - last_clip > c["cooldown_s"]
+                        and peak_wall - started > c["min_seconds_live"]):
+                    pending = (peak_wall, b["why"])
+                    log(f"patlama (sohbet): {b['why']} | skor {b['score']:.1f}, taban {b['base']:.1f} "
+                        f"(yayının {(peak_wall - started) / 60:.0f}. dakikası)")
 
             if pending and time.time() > pending[0] + c["after_s"] + SEG:
-                peak, burst = pending
+                peak, why = pending
                 pending, last_clip = None, peak
                 sec = int(peak - started)
                 if any(sid == info["id"] and abs(s - sec) < 60 for sid, s in done):
@@ -195,7 +215,7 @@ def main():
                 title = meta.get("title") or f"{who} yayınından #shorts"
                 desc = (f"{who} canlı yayınından bir an ({info['category']}).\n"
                         f"Yayıncı: https://kick.com/{who}\n\n#{who} #kick #shorts\n\nmoment:{info['id']}:{sec}")
-                (out / f"{stamp}.json").write_text(json.dumps({"title": title, "desc": desc, "burst_db": round(burst, 1),
+                (out / f"{stamp}.json").write_text(json.dumps({"title": title, "desc": desc, "trigger": why,
                                                                **meta}, ensure_ascii=False, indent=1), encoding="utf-8")
                 if args.dry_run:
                     log(f"[deneme] hazır: {final.name} | {title}")
@@ -207,6 +227,7 @@ def main():
                 done.add((info["id"], sec))
     finally:
         rec.stop()
+        meter.stop()
     # tell the workflow whether to start the next shift
     still = kick.live_info(who)
     (ROOT / "still_live").write_text("1" if still and still["id"] == info["id"] else "0")

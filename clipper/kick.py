@@ -18,7 +18,8 @@ def live_info(slug: str) -> dict | None:
     if not ls or not ls.get("is_live"):
         return None
     cats = ls.get("categories") or [{}]
-    return {"id": str(ls["id"]), "title": ls.get("session_title", ""), "category": cats[0].get("name", ""),
+    return {"id": str(ls["id"]), "channel_id": d["id"], "title": ls.get("session_title", ""),
+            "category": cats[0].get("name", ""),
             "playback_url": d["playback_url"], "started": ls.get("start_time") or ls.get("created_at")}
 
 
