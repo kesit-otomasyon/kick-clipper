@@ -83,18 +83,49 @@ def loudness(piece: Path) -> list[float]:
     return list(20 * np.log10(np.sqrt((a[:n * 8000].reshape(n, 8000) ** 2).mean(1)) + 1))
 
 
-def describe(llm: LLM, words, streamer: str, stream_title: str, category: str) -> dict:
+def describe(llm: LLM, words, streamer: str, stream_title: str, category: str, frames=None) -> dict:
     said = " ".join(w[2] for w in words)[:1500] or "(only shouting / laughing, no clear words)"
+    seen = f"""
+The {len(frames)} images are frames from the start, middle and end of the clip: judge what is ON SCREEN.
+visual = 1-10, how watchable the picture is as a Short. Give 1-3 when the screen is mostly a loading, setup,
+settings or OBS window, a desktop or browser, a "no signal" / black / "starting soon" / "be right back" /
+ending screen, a paused game or menu, a sponsor ad or promo code, a still image, or the streamer is away.
+Give 7-10 when something is clearly happening (gameplay action, a strong reaction on the webcam, a funny scene).
+scene = what you see, one short English sentence.
+""" if frames else ""
     return llm.json(f"""A moment from a live Kick stream by the Turkish streamer {streamer}
 (stream title: "{stream_title}", category: {category}). What was said:
 {said}
-
+{seen}
 1) Is it safe for YouTube? ok=false for: slurs or hate, sexual content, doxxing or private data, self-harm,
    gambling/casino, violence against real people. Normal swearing and game violence are fine.
 2) A Turkish hook shown on top for the first seconds: max 5 words, makes people stay, no swearing, no emojis.
+   It must fit what is on screen.
 3) A Turkish YouTube title: max 55 chars, mentions {streamer}, ends with " #shorts", no swearing.
 4) 6-10 Turkish/English tags.
-Return JSON {{"ok": true|false, "reason": "...", "hook": "...", "title": "...", "tags": ["..."]}}""")
+Return JSON {{"ok": true|false, "reason": "...", "visual": 1-10, "scene": "...", "hook": "...", "title": "...",
+"tags": ["..."]}}""", images=frames)
+
+
+def picture_ok(raw, c: dict) -> tuple[dict | None, str]:
+    """Cheap check of the picture before transcribing: (look result, '') or (None, why it was dropped)."""
+    seen = render.look(raw)
+    if seen["black"] > c.get("max_black", 0.3):
+        return None, f"ekranın %{seen['black'] * 100:.0f}'i siyah"
+    if seen["frozen"] > c.get("max_frozen", 0.7):
+        return None, f"görüntünün %{seen['frozen'] * 100:.0f}'i donuk (hareket yok)"
+    return seen, ""
+
+
+def visual_ok(meta: dict, c: dict) -> str:
+    """'' when the vision check liked the picture, else why not."""
+    try:
+        v = float(meta.get("visual", 5))
+    except (TypeError, ValueError):
+        v = 5.0
+    if v < c.get("min_visual", 5):
+        return f"görüntü zayıf ({v:.0f}/10): {meta.get('scene', '')}"
+    return ""
 
 
 def main():
@@ -200,9 +231,14 @@ def main():
                 raw = rec.cut(peak - c["before_s"], peak + c["after_s"], out / f"{stamp}_raw.mp4")
                 if not raw:
                     continue
+                seen, why_not = picture_ok(raw, c)
+                if not seen:
+                    log(f"görüntü elendi: {why_not}")
+                    raw.unlink(missing_ok=True)
+                    continue
                 words = render.transcribe(raw)
                 try:
-                    meta = describe(llm, words, who, info["title"], info["category"])
+                    meta = describe(llm, words, who, info["title"], info["category"], seen["frames"])
                 except RuntimeError as e:
                     log(f"başlık yazılamadı: {e}")
                     continue
@@ -210,6 +246,12 @@ def main():
                     log(f"güvenlik kontrolü reddetti: {meta.get('reason', '')}")
                     raw.unlink(missing_ok=True)
                     continue
+                weak = visual_ok(meta, c)
+                if weak:
+                    log(f"görüntü elendi: {weak}")
+                    raw.unlink(missing_ok=True)
+                    continue
+                log(f"görüntü {meta.get('visual')}/10: {meta.get('scene', '')}")
                 final = render.render(raw, out / f"{stamp}.mp4", words, meta.get("hook", ""), who)
                 raw.unlink(missing_ok=True)
                 title = meta.get("title") or f"{who} yayınından #shorts"

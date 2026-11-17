@@ -15,7 +15,7 @@ import yaml
 
 from . import kick, render, youtube
 from .llm import LLM
-from .watch import describe, log
+from .watch import describe, log, picture_ok, visual_ok
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -98,9 +98,17 @@ def main():
             subprocess.run(["ffmpeg", "-v", "error", "-y", "-i", k["clip_url"], "-t", str(vc["max_seconds"]),
                             "-c:v", "libx264", "-preset", "veryfast", "-crf", "18", "-c:a", "aac", str(raw)],
                            check=True)
+            c = cfg["clips"]
+            seen, why_not = picture_ok(raw, c)
+            if not seen:
+                log(f"görüntü elendi ({k['id']}): {why_not}")
+                raw.unlink(missing_ok=True)
+                done.add(k["id"])
+                continue
             words = render.transcribe(raw)
             try:
-                meta = describe(llm, words, who, f"{info['title']} | kesit: {k.get('title', '')}", info["category"])
+                meta = describe(llm, words, who, f"{info['title']} | kesit: {k.get('title', '')}", info["category"],
+                                seen["frames"])
             except RuntimeError as e:
                 log(f"başlık yazılamadı: {e}")
                 continue
@@ -109,6 +117,13 @@ def main():
                 raw.unlink(missing_ok=True)
                 done.add(k["id"])
                 continue
+            weak = visual_ok(meta, c)
+            if weak:
+                log(f"görüntü elendi ({k['id']}): {weak}")
+                raw.unlink(missing_ok=True)
+                done.add(k["id"])
+                continue
+            log(f"görüntü {meta.get('visual')}/10: {meta.get('scene', '')}")
             final = render.render(raw, out / f"{stamp}.mp4", words, meta.get("hook", ""), who)
             raw.unlink(missing_ok=True)
             title = meta.get("title") or f"{who} yayınından #shorts"

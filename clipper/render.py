@@ -130,3 +130,31 @@ def render(src: Path, out: Path, words, hook: str, streamer: str) -> Path:
                     "-map", "0:a", "-c:v", "libx264", "-preset", "veryfast", "-crf", "21", "-c:a", "aac",
                     "-b:a", "160k", "-r", "30", out.name], check=True, cwd=out.parent)
     return out
+
+
+def look(src: Path, n_frames: int = 4) -> dict:
+    """What the picture of a clip looks like, before spending time on it: how much of it is black and how
+    much is frozen (no motion), plus a few small JPEG frames for the vision check."""
+    cap = cv2.VideoCapture(str(src))
+    fps = cap.get(cv2.CAP_PROP_FPS) or 30
+    total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT)) or int(duration(src) * fps)
+    step = max(int(round(fps)), 1)
+    picks = {int((k + 0.5) * total / n_frames) // step for k in range(n_frames)}
+    smalls, keep = [], []
+    for i, f in enumerate(range(0, total, step)):
+        cap.set(cv2.CAP_PROP_POS_FRAMES, f)
+        ok, frame = cap.read()
+        if not ok:
+            break
+        smalls.append(cv2.cvtColor(cv2.resize(frame, (160, 90)), cv2.COLOR_BGR2GRAY).astype(np.float32))
+        if i in picks:
+            h, w = frame.shape[:2]
+            img = cv2.resize(frame, (640, int(640 * h / w)))
+            keep.append(cv2.imencode(".jpg", img, [cv2.IMWRITE_JPEG_QUALITY, 70])[1].tobytes())
+    cap.release()
+    if len(smalls) < 3:
+        return {"black": 1.0, "frozen": 1.0, "frames": keep}
+    black = sum(s.mean() < 18 for s in smalls) / len(smalls)
+    moves = [float(np.abs(a - b).mean()) for a, b in zip(smalls, smalls[1:])]
+    frozen = sum(m < 1.0 for m in moves) / len(moves)
+    return {"black": round(float(black), 2), "frozen": round(frozen, 2), "frames": keep}
