@@ -1,8 +1,8 @@
 name: Live watch (chat + audio bursts)
 
 on:
-  # schedule (turned on after a dry run is reviewed):
-  #   - cron: "7,22,37,52 * * * *"   # every 15 min: notice when a streamer goes live
+  schedule:
+    - cron: "7,22,37,52 * * * *"   # every 15 min: notice when a streamer goes live
   workflow_dispatch:
     inputs:
       streamer:
