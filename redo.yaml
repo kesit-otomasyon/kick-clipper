@@ -1,0 +1,8 @@
+# Yeniden yapılacak kesitler: yayın kaydından tekrar kesilir, yeni hali yüklenir, sonra eski hali silinir.
+# Bu dosya değişince "Redo Shorts" iş akışı çalışır. Yapılmış olanlar atlanır.
+- streamer: rraenee
+  stream: "138540372"      # Kick yayın kimliği
+  sec: 1909                # yayının kaçıncı saniyesi
+  replace: psxLWyzJE6o     # eski Short (kamerasız)
+  title: "rraenee GTA 6 Soygun Sahnesini İzliyor #shorts"
+  category: Grand Theft Auto VI (GTA)

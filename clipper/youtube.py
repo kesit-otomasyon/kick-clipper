@@ -81,3 +81,8 @@ def upload(channel: str, video: Path, title: str, description: str, tags: list[s
             _, resp = req.next_chunk()
         return resp["id"]
     return _retry(channel, call, tries=3)
+
+
+def delete(channel: str, video_id: str):
+    """Deletes one of our own uploads (50 quota units)."""
+    _retry(channel, lambda yt: yt.videos().delete(id=video_id).execute())
