@@ -88,6 +88,8 @@ Game characters, cutscenes, trailers and videos on screen are NOT the webcam.
 If the whole screen is the camera (just chatting, no game), that is not an overlay: webcam=false.
 Answer JSON: {"webcam": true/false, "box_2d": [ymin, xmin, ymax, xmax]} with the overlay's outer border,
 coordinates normalized to 0-1000.""", images=[jpg.tobytes()])
+    if isinstance(a, list):  # sometimes the answer comes wrapped in a list
+        a = next((x for x in a if isinstance(x, dict)), {})
     if not a.get("webcam") or len(a.get("box_2d") or []) != 4:
         return None
     y0, x0, y1, x1 = (float(v) / 1000 for v in a["box_2d"])
