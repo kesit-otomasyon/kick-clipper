@@ -1,9 +1,16 @@
 # YouTube'daki kesitlerden TikTok'a (taslak) gönderilecekler. Bu dosya değişince "TikTok backfill" iş akışı çalışır.
-# Kesit, açıklamadaki an bilgisinden yeniden yapılır; YouTube'a dokunulmaz.
-# 18 Kasım: en çok izlenen 3 kesit
-- streamer: rraenee
-  replace: 5j2M5bvqFsw
+# Kesit, açıklamadaki an bilgisinden yeniden yapılır; YouTube'a dokunulmaz. Listede sadece yeni gönderilecekler durur.
+# 18 Kasım (2. tur): izlenen / bir olay içeren kesitler
+# (1. tur gönderildi: 5j2M5bvqFsw, Jew_7qzge8g, _8IlWoOUbgg)
 - streamer: eray
-  replace: Jew_7qzge8g
+  replace: BTVwXrJNgTg     # Eray Global Yayıncı Olursa! (370)
 - streamer: rraenee
-  replace: _8IlWoOUbgg
+  replace: AT4mmLzt3X8     # rraenee GTA 6 Trailerı İnceliyor (143)
+- streamer: eray
+  replace: kULFB9lFHOQ     # Eray GTA Oynuyor (64)
+- streamer: eray
+  replace: 14hZJ43QpvY     # Eray ve Ekibin Büyük Tartışması (61)
+- streamer: eray
+  replace: aNcagA8i2nY     # eray Uçak Görevinde Zor Anlar Yaşıyor (36)
+- streamer: rraenee
+  replace: 2EDE7gSwqls     # rraenee ile GTA'da Polis Kovalamacası
