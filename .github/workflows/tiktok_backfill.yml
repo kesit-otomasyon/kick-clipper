@@ -33,6 +33,7 @@ jobs:
             sudo timeout 180 apt-get update -qq -o Acquire::Retries=3               && sudo timeout 240 apt-get install -y -qq --no-install-recommends ffmpeg && break
             sleep 5
           done
+          command -v ffmpeg >/dev/null || { echo "ffmpeg kurulamadı (apt)"; exit 1; }
           pip install -r requirements.txt
 
       - name: Whisper model cache

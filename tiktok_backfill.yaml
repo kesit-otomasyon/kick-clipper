@@ -1,6 +1,6 @@
 # YouTube'daki kesitlerden TikTok'a (taslak) gönderilecekler. Bu dosya değişince "TikTok backfill" iş akışı çalışır.
 # Kesit, açıklamadaki an bilgisinden yeniden yapılır; YouTube'a dokunulmaz. Listede sadece yeni gönderilecekler durur.
-# 18 Kasım (2. tur): izlenen / bir olay içeren kesitler
+# 18 Kasım (2. tur, tekrar): izlenen / bir olay içeren kesitler
 # (1. tur gönderildi: 5j2M5bvqFsw, Jew_7qzge8g, _8IlWoOUbgg)
 - streamer: eray
   replace: BTVwXrJNgTg     # Eray Global Yayıncı Olursa! (370)
