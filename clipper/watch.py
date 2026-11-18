@@ -38,15 +38,27 @@ def log(msg):
 class Recorder:
     """ffmpeg copies the live stream into numbered 5 s pieces; restarted when the stream token expires."""
 
-    def __init__(self, master: str, workdir: Path):
-        self.master, self.dir = master, workdir
+    def __init__(self, master: str, workdir: Path, slug: str = ""):
+        self.master, self.dir, self.slug, self.retry_at = master, workdir, slug, 0.0
         self.dir.mkdir(parents=True, exist_ok=True)
         self.proc, self.next_no, self.pieces = None, 0, []  # pieces: (path, wall start)
 
     def ensure(self):
-        if self.proc and self.proc.poll() is None:
+        if self.proc and self.proc.poll() is None or time.time() < self.retry_at:
             return
-        url = kick.best_variant(self.master)
+        try:
+            url = kick.best_variant(self.master)
+        except Exception as e:  # the stream address expired (or the stream restarted): ask Kick for a fresh one
+            log(f"yayın adresi açılmadı ({type(e).__name__}), yenisi alınıyor")
+            try:
+                live = kick.live_info(self.slug) if self.slug else None
+                if live:
+                    self.master = live["playback_url"]
+                url = kick.best_variant(self.master)
+            except Exception as e2:
+                log(f"yayın adresi yine açılmadı: {type(e2).__name__}; 30 sn sonra tekrar")
+                self.retry_at = time.time() + 30
+                return
         self.proc = subprocess.Popen(
             ["ffmpeg", "-v", "error", "-y", "-i", url, "-c", "copy", "-f", "segment", "-segment_time", str(SEG),
              "-reset_timestamps", "1", "-segment_start_number", str(self.next_no), str(self.dir / "p%07d.ts")])
@@ -177,7 +189,7 @@ def main():
     log(f"{who} yayında: {info['title'][:60]} | {info['category']}")
 
     w = Worker(cfg, who, info, started, args.dry_run)
-    rec = Recorder(info["playback_url"], ROOT / "work" / who)
+    rec = Recorder(info["playback_url"], ROOT / "work" / who, who)
     meter = ChatMeter(info["channel_id"]).start()
     db, walls = [], []          # dB per second and its wall-clock time
     last_clip, pending = 0.0, None
