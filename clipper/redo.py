@@ -15,7 +15,6 @@ import yaml
 from . import cam, render, youtube
 from .kick import H
 from .llm import LLM
-from .viewer_clips import stream_clips
 from .watch import describe, log
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -38,9 +37,10 @@ def jobs(reqs: list[dict], uploads: list[dict]) -> list[dict]:
             continue
         for u in uploads:
             d = u["description"]
-            if "redo:" in d or f"kick.com/{q['streamer']}" not in d:
-                continue
-            if q.get("replace") and u["id"] != q["replace"]:
+            if q.get("replace"):
+                if u["id"] != q["replace"]:
+                    continue
+            elif "redo:" in d or f"kick.com/{q['streamer']}" not in d:
                 continue
             if q.get("date") and not u["published"].startswith(str(q["date"])):
                 continue
@@ -74,9 +74,9 @@ def main():
         log(f"{old}: yeniden yapılıyor | {q.get('title', '')}")
         try:
             if q.get("clip"):  # a viewer clip: its own video
-                k = next((k for k in stream_clips(who, q["stream"]) if k["id"] == q["clip"]), None) \
-                    if q["stream"] else None
-                if not k:
+                r = requests.get(f"https://kick.com/api/v2/clips/{q['clip']}", headers=H, timeout=30)
+                k = r.json().get("clip") if r.ok else None
+                if not k or not k.get("clip_url"):
                     log(f"{old}: izleyici kesiti {q['clip']} bulunamadı, atlandı.")
                     continue
                 src, a, b, stitle = k["clip_url"], 0, int(k.get("duration") or 60), k.get("title", "")
@@ -96,8 +96,7 @@ def main():
             log(f"kamera: {cam.where(box)} {box or ''}")
         except Exception as e:
             log(f"kamera kontrolü yapılamadı: {type(e).__name__}: {e}")
-            box = None
-        box = box or cfg.get("cams", {}).get(who)
+            box = cfg.get("cams", {}).get(who)  # only when unsure; "no webcam" (full-screen camera) stays None
         words = render.transcribe(raw)
         seen = render.look(raw)
         try:

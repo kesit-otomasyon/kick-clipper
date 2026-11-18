@@ -12,3 +12,9 @@
   date: "2026-11-18"
   stream: "138529992"      # izleyici kesitlerini bulmak için
   category: Grand Theft Auto VI (GTA)
+
+# ilk yeniden yapımda tam ekran kameraya yanlış kutu uygulandı: bir kez daha
+- streamer: eray
+  replace: fj1c__sGVbk
+- streamer: eray
+  replace: mg_0hSp9oyk
