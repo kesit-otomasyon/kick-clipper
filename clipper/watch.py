@@ -407,8 +407,16 @@ class Worker:
         with self.lock:
             if not self.ready:
                 return
-            best = max(self.ready, key=lambda r: r["quality"])
-            rest = [r for r in self.ready if r is not best]
+            floor = self.c.get("min_quality", 0)
+            weak = [r for r in self.ready if r["quality"] < floor]
+            good = [r for r in self.ready if r["quality"] >= floor]
+        for r in weak:
+            log(f"zayıf an elendi (kalite {r['quality']} < {floor}): {r['title']}")
+        if not good:
+            self._drop(weak)
+            return
+        best = max(good, key=lambda r: r["quality"])
+        rest = [r for r in good + weak if r is not best]
         if self.left() <= 0:
             self._drop([best] + rest)
             return
@@ -434,8 +442,8 @@ class Worker:
                 self.all_today = 10 ** 6  # stop for today
                 self._drop([best] + rest)
                 return
-            log(f"yüklendi (kalite {best['quality']}, {len(rest)} aday elendi): https://youtu.be/{vid} | {best['title']}")
-        self._drop([best] + rest)  # files are deleted only outside a dry run
+            log(f"yüklendi (kalite {best['quality']}, {len(weak)} zayıf aday elendi): https://youtu.be/{vid} | {best['title']}")
+        self._drop([best] + weak)  # other good moments wait for the next window; files deleted only outside a dry run
         if self.dry:
             log(f"[deneme] seçildi (kalite {best['quality']}, {len(rest)} aday elendi): {best['file'].name} | "
                 f"{best['title']}")

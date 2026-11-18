@@ -15,7 +15,8 @@ clips:
   per_day_total: 90             # 100'ün altında: yeniden yapım için pay; YouTube kanal sınırına gelirse o gün durur
   cooldown_s: 150               # iki aday an arasında en az bu kadar saniye
   cam_every_min: 30             # kamera kutusu bu sıklıkta yeniden aranır (yayıncı düzeni değiştirirse)
-  pick_every_min: 2             # kısa pencere: kalite kontrolünden geçen neredeyse her an yüklenir
+  pick_every_min: 2             # kısa pencere: eşiği geçen neredeyse her an yüklenir
+  min_quality: 12               # sadece iyi anlar: kalite = güç x görüntü puanı (18 Kasım: 45 adaydan ~15'i geçerdi)
   before_s: 30                  # patlamadan önceki kısım (olayın başı)
   after_s: 15                   # patlamadan sonraki kısım (tepki)
   burst_db: 9.0                 # sesin, son 2 dakikanın ortancasından bu kadar dB yükselmesi = patlama
@@ -29,7 +30,7 @@ clips:
   # görüntü kontrolü: kesit ancak yayının görüntüsü de iyiyse yapılır
   max_black: 0.3                # karelerin en fazla bu oranı siyah olabilir
   max_frozen: 0.7               # karelerin en fazla bu oranı donuk (hareketsiz) olabilir
-  min_visual: 6                 # Gemini'nin karelere verdiği puan (1-10); kurulum/ayar ekranı, masaüstü,
+  min_visual: 7                 # Gemini'nin karelere verdiği puan (1-10); kurulum/ayar ekranı, masaüstü,
                                 # "no signal", "birazdan başlıyoruz", reklam, oyun menüsü düşük puan alır
   min_seconds_live: 300         # yayının ilk 5 dakikası (açılış, müzik) atlanır
   publish_delay_min: 15         # yüklemeden bu kadar dakika sonra yayına girer
@@ -37,7 +38,7 @@ clips:
 # Ana yöntem (2026-11-14): izleyicilerin Kick'te aldığı kesitler. Her 15 dakikada yeni olanlar alınır.
 viewer_clips:
   per_run: 2                    # bir çalışmada yayıncı başına en fazla bu kadar yeni kesit
-  min_views: 5                  # en az bu kadar izlenmiş kesitler (boş/test kesitlerini eler)
+  min_views: 15                  # en az bu kadar izlenmiş kesitler (boş/test kesitlerini eler)
   min_seconds: 8
   max_seconds: 60
   after_stream_hours: 3         # yayın bittikten sonra bu kadar saat daha yeni kesitlere bakılır
