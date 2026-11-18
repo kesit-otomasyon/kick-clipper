@@ -13,7 +13,7 @@ from pathlib import Path
 import requests
 import yaml
 
-from . import kick, render, youtube
+from . import cam, kick, render, youtube
 from .llm import LLM
 from .watch import describe, log, picture_ok, visual_ok
 
@@ -79,6 +79,7 @@ def main():
     today = uploads[:youtube.uploads_today(uploads)]
     total_left = c["per_day_total"] - len(today)
     llm = LLM(cfg)
+    cams = {}
     out = ROOT / "out"
     out.mkdir(exist_ok=True)
 
@@ -125,6 +126,13 @@ def main():
                 raw.unlink(missing_ok=True)
                 done.add(k["id"])
                 continue
+            if who not in cams:  # where is the webcam today? (once per streamer per run)
+                try:
+                    cams[who] = cam.find(llm, cam.frames([raw], per_video=3))
+                    log(f"kamera: {cam.where(cams[who])} {cams[who] or ''}")
+                except Exception as e:
+                    log(f"kamera kontrolü yapılamadı: {type(e).__name__}: {e}")
+                    cams[who] = cfg.get("cams", {}).get(who)
             words = render.transcribe(raw)
             try:
                 meta = describe(llm, words, who, f"{info['title']} | kesit: {k.get('title', '')}", info["category"],
@@ -144,8 +152,7 @@ def main():
                 done.add(k["id"])
                 continue
             log(f"görüntü {meta.get('visual')}/10: {meta.get('scene', '')}")
-            final = render.render(raw, out / f"{stamp}.mp4", words, meta.get("hook", ""), who,
-                                  cfg.get("cams", {}).get(who))
+            final = render.render(raw, out / f"{stamp}.mp4", words, meta.get("hook", ""), who, cams[who])
             raw.unlink(missing_ok=True)
             title = meta.get("title") or f"{who} yayınından #shorts"
             desc = (f"{who} canlı yayınından bir an ({info['category']}).\n"

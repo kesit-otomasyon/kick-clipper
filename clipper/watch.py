@@ -23,7 +23,7 @@ from pathlib import Path
 import numpy as np
 import yaml
 
-from . import kick, render, youtube
+from . import cam, kick, render, youtube
 from .chat import ChatMeter
 from .llm import LLM
 
@@ -183,6 +183,7 @@ def main():
     last_clip, pending = 0.0, None
     deadline = time.time() + args.hours * 3600
     next_check, offline = time.time() + 120, 0
+    next_cam = time.time() + 90  # first look soon after the start, then every cam_every_min
 
     try:
         while time.time() < deadline and not w.full():
@@ -194,6 +195,11 @@ def main():
                     db.append(v)
                     walls.append(t0 + k)
             db, walls = db[-900:], walls[-900:]
+
+            if time.time() > next_cam and len(rec.pieces) >= 13:
+                next_cam = time.time() + c.get("cam_every_min", 30) * 60
+                ps = [rec.pieces[-1][0], rec.pieces[-7][0], rec.pieces[-13][0]]  # 30 s apart
+                threading.Thread(target=w.check_cam, args=(ps,), daemon=True).start()
 
             if time.time() > next_check:  # still live? same stream?
                 next_check = time.time() + 120
@@ -278,6 +284,7 @@ class Worker:
         self.mine_today = sum(f"kick.com/{who}" in u["description"] for u in uploads[:youtube.uploads_today(uploads)])
         self.all_today = youtube.uploads_today(uploads)  # every upload today, live watch and viewer clips
         self.made = 0
+        self.cam = cfg.get("cams", {}).get(who)  # webcam box, looked for again every 30 minutes
         self.q: queue.Queue = queue.Queue()
         self.ready: list[dict] = []
         self.lock = threading.Lock()
@@ -285,6 +292,20 @@ class Worker:
         self.busy = threading.Event()
         self.thread = threading.Thread(target=self._run, daemon=True)
         self.thread.start()
+
+    def check_cam(self, pieces):
+        """Where is the webcam now? A layout change is followed; when unsure the last box stays."""
+        try:
+            frs = cam.frames(pieces)
+            box = cam.find(self.llm, frs)
+            if box is None and self.cam and cam.people_in(frs, self.cam) >= 2:
+                box = self.cam  # e.g. a full-screen cutscene confused the look, but people are still in the old box
+        except Exception as e:
+            log(f"kamera kontrolü yapılamadı: {type(e).__name__}: {e}")
+            return
+        if box != self.cam:
+            log(f"kamera: {cam.where(box)} {box or ''} (önceki: {cam.where(self.cam)})")
+        self.cam = box
 
     def left(self) -> int:
         if self.dry:
@@ -346,8 +367,7 @@ class Worker:
             log(f"görüntü elendi ({sec} sn): {weak}")
             raw.unlink(missing_ok=True)
             return
-        final = render.render(raw, self.out / f"{stamp}.mp4", words, meta.get("hook", ""), who,
-                              self.cfg.get("cams", {}).get(who))
+        final = render.render(raw, self.out / f"{stamp}.mp4", words, meta.get("hook", ""), who, self.cam)
         raw.unlink(missing_ok=True)
         try:
             visual = float(meta.get("visual", 5))
