@@ -9,7 +9,8 @@ youtube_channel: clips          # credentials/token_clips.json (GitHub secret YT
 clips:
   per_streamer_per_day: 3       # YouTube günde ~6 yükleme izin veriyor (proje kotası 10.000 / 1.600)
   per_day_total: 6
-  cooldown_s: 240               # iki kesit arasında en az bu kadar saniye
+  cooldown_s: 150               # iki aday an arasında en az bu kadar saniye
+  pick_every_min: 30            # her 30 dakikada hazırlanan adayların en güçlüsü yüklenir (ilk anlar değil, en iyileri)
   before_s: 30                  # patlamadan önceki kısım (olayın başı)
   after_s: 15                   # patlamadan sonraki kısım (tepki)
   burst_db: 9.0                 # sesin, son 2 dakikanın ortancasından bu kadar dB yükselmesi = patlama

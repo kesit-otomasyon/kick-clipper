@@ -119,11 +119,11 @@ def render(src: Path, out: Path, words, hook: str, streamer: str) -> Path:
     if cam:
         x, y, w, h = cam
         vf = (f"[0:v]split[a][b];[a]crop={w}:{h}:{x}:{y},scale=1080:700[cam];"
-              "[b]scale=-2:1220,crop=1080:1220[game];[cam][game]vstack[v]")
+              "[b]scale=1080:1220:force_original_aspect_ratio=increase,crop=1080:1220[game];[cam][game]vstack[v]")
         write_ass(words, hook, f"KICK: {streamer}", dur, ass, cap_y=1380, hook_y=600)
     else:
         vf = ("[0:v]split[a][b];[a]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,"
-              "boxblur=30:3,eq=brightness=-0.3[bg];[b]scale=-2:1300,crop=1080:1300[game];[bg][game]overlay=0:300[v]")
+              "boxblur=30:3,eq=brightness=-0.3[bg];[b]scale=1080:1300:force_original_aspect_ratio=increase,crop=1080:1300[game];[bg][game]overlay=0:300[v]")
         write_ass(words, hook, f"KICK: {streamer}", dur, ass, cap_y=1350, hook_y=150)
     vf += f";[v]ass={ass.name}:fontsdir=fonts[out]"
     subprocess.run(["ffmpeg", "-v", "error", "-y", "-i", str(src.resolve()), "-filter_complex", vf, "-map", "[out]",
