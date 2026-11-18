@@ -47,8 +47,9 @@ def recent_uploads(channel: str, n: int = 50) -> list[dict]:
         pl = up["contentDetails"]["relatedPlaylists"]["uploads"]
         return yt.playlistItems().list(part="snippet", playlistId=pl, maxResults=n).execute().get("items", [])
     items = _retry(channel, call)
-    return [{"title": i["snippet"]["title"], "description": i["snippet"].get("description", ""),
-             "published": i["snippet"]["publishedAt"]} for i in items]
+    return [{"id": i["snippet"]["resourceId"]["videoId"], "title": i["snippet"]["title"],
+             "description": i["snippet"].get("description", ""), "published": i["snippet"]["publishedAt"]}
+            for i in items]
 
 
 def uploads_today(uploads: list[dict]) -> int:
