@@ -1,0 +1,11 @@
+<!doctype html><html lang="tr"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TikTok bağlantısı</title><link rel="stylesheet" href="style.css">
+<h1>TikTok bağlantısı</h1>
+<p id="m">Kod okunuyor…</p>
+<script>
+var q = new URLSearchParams(location.search), c = q.get("code"), e = q.get("error");
+document.getElementById("m").textContent = c
+  ? "Bağlantı tamam. Bu sayfanın adresini Claude'a ver (ya da pencereyi açık bırak)."
+  : (e ? "Hata: " + e + " " + (q.get("error_description") || "") : "Kod yok.");
+</script>
+</html>
