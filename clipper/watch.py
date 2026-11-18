@@ -258,6 +258,8 @@ def main():
                 live = bool(still and still["id"] == info["id"])
             except Exception:
                 live = True  # unsure: better to start another shift, it stops by itself when offline
+            if w.left() <= 0:
+                live = False  # nothing more can be uploaded today: no next shift (it would only loop)
             (ROOT / "still_live").write_text("1" if live else "0")
 
 
