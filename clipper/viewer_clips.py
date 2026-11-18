@@ -128,7 +128,7 @@ def main():
                 continue
             if who not in cams:  # where is the webcam today? (once per streamer per run)
                 try:
-                    cams[who] = cam.find(llm, cam.frames([raw], per_video=3))
+                    cams[who] = cam.find(llm, cam.frames([raw], per_video=3), cfg.get("cams", {}).get(who))
                     log(f"kamera: {cam.where(cams[who])} {cams[who] or ''}")
                 except Exception as e:
                     log(f"kamera kontrolü yapılamadı: {type(e).__name__}: {e}")

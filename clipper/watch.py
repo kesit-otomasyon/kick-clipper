@@ -297,9 +297,7 @@ class Worker:
         """Where is the webcam now? A layout change is followed; when unsure the last box stays."""
         try:
             frs = cam.frames(pieces)
-            box = cam.find(self.llm, frs)
-            if box is None and self.cam and cam.people_in(frs, self.cam) >= 2:
-                box = self.cam  # e.g. a full-screen cutscene confused the look, but people are still in the old box
+            box = cam.find(self.llm, frs, self.cam or self.cfg.get("cams", {}).get(self.who))
         except Exception as e:
             log(f"kamera kontrolü yapılamadı: {type(e).__name__}: {e}")
             return

@@ -92,7 +92,7 @@ def main():
         subprocess.run(["ffmpeg", "-v", "error", "-y", "-ss", str(a), "-i", src, "-t", str(b - a),
                         "-c:v", "libx264", "-preset", "veryfast", "-crf", "18", "-c:a", "aac", str(raw)], check=True)
         try:
-            box = cam.find(llm, cam.frames([raw], per_video=3))
+            box = cam.find(llm, cam.frames([raw], per_video=3), cfg.get("cams", {}).get(who))
             log(f"kamera: {cam.where(box)} {box or ''}")
         except Exception as e:
             log(f"kamera kontrolü yapılamadı: {type(e).__name__}: {e}")

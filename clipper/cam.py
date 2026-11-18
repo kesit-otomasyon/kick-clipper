@@ -80,12 +80,8 @@ def people_in(frs, box) -> int:
     return seen
 
 
-def find(llm, frs: list[np.ndarray]):
-    """[x, y, w, h] fractions of the webcam box, None when there is no webcam, raises when unsure (LLM error)."""
-    if not frs:
-        raise ValueError("kare yok")
-    H, W = frs[0].shape[:2]
-    jpg = cv2.imencode(".jpg", cv2.resize(frs[-1], (1280, int(1280 * H / W))), [cv2.IMWRITE_JPEG_QUALITY, 85])[1]
+def _ask(llm, fr, frs, W, H):
+    jpg = cv2.imencode(".jpg", cv2.resize(fr, (1280, int(1280 * H / W))), [cv2.IMWRITE_JPEG_QUALITY, 85])[1]
     a = llm.json("""This is a frame of a live game stream. Streamers often put a WEBCAM overlay on top of the game:
 a rectangle (usually in a corner) showing the real streamer or a group of real people in a room.
 Game characters, cutscenes, trailers and videos on screen are NOT the webcam.
@@ -101,6 +97,37 @@ coordinates normalized to 0-1000.""", images=[jpg.tobytes()])
         return None
     box = [round(x0 / W, 3), round(y0 / H, 3), round(w, 3), round(h, 3)]
     return box if people_in(frs, box) >= max(1, len(frs) // 3) else None
+
+
+def faces_outside(frs, box) -> int:
+    """In how many frames a clear face is seen outside box: the whole screen is a camera (no overlay)."""
+    H, W = frs[0].shape[:2]
+    x, y, w, h = box[0] * W, box[1] * H, box[2] * W, box[3] * H
+    det = cv2.FaceDetectorYN.create(str(FACE_MODEL), "", (W, H), 0.8)
+    n = 0
+    for fr in frs:
+        _, faces = det.detect(fr)
+        out = [f for f in (faces if faces is not None else [])
+               if not (x <= f[0] + f[2] / 2 <= x + w and y <= f[1] + f[3] / 2 <= y + h)]
+        n += len(out) > 0
+    return n
+
+
+def find(llm, frs: list[np.ndarray], known=None):
+    """[x, y, w, h] fractions of the webcam box, None when there is no webcam, raises when unsure (LLM error).
+    Each frame is asked (newest first): a menu or a full-screen cutscene in one frame hides the overlay.
+    known: the last box; kept when the look says "no webcam" but people still sit in it and the rest of
+    the screen has no faces (a full-screen camera has faces everywhere)."""
+    if not frs:
+        raise ValueError("kare yok")
+    H, W = frs[0].shape[:2]
+    for fr in reversed(frs):
+        box = _ask(llm, fr, frs, W, H)
+        if box:
+            return box
+    if known and people_in(frs, known) >= max(1, len(frs) // 2) and faces_outside(frs, known) < max(1, len(frs) // 2):
+        return list(known)
+    return None
 
 
 def where(box) -> str:
