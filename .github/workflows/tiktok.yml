@@ -1,5 +1,5 @@
 name: TikTok check
-# Checks the TikTok chain on GitHub: keys, encrypted token variable, refresh and write-back.
+# Checks the TikTok chain on GitHub: keys, encrypted token variable (TIKTOK_TOKEN_ENC), refresh and write-back.
 on:
   workflow_dispatch:
   push:
