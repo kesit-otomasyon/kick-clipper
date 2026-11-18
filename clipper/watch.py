@@ -346,7 +346,8 @@ class Worker:
             log(f"görüntü elendi ({sec} sn): {weak}")
             raw.unlink(missing_ok=True)
             return
-        final = render.render(raw, self.out / f"{stamp}.mp4", words, meta.get("hook", ""), who)
+        final = render.render(raw, self.out / f"{stamp}.mp4", words, meta.get("hook", ""), who,
+                              self.cfg.get("cams", {}).get(who))
         raw.unlink(missing_ok=True)
         try:
             visual = float(meta.get("visual", 5))

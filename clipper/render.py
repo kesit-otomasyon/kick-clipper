@@ -24,6 +24,26 @@ def duration(path: Path) -> float:
     return float(out or 0)
 
 
+def known_cam(src: Path, dur: float, box):
+    """The streamer's webcam box from config ([x, y, w, h] as fractions), if people are seen in it.
+    A wide group camera has faces too small for find_facecam; and the box is empty when the cam is off."""
+    cap = cv2.VideoCapture(str(src))
+    W, H = cap.get(cv2.CAP_PROP_FRAME_WIDTH), cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
+    x, y, w, h = int(box[0] * W), int(box[1] * H), int(box[2] * W), int(box[3] * H)
+    seen = 0
+    for k in range(8):
+        cap.set(cv2.CAP_PROP_POS_MSEC, (k + 0.5) / 8 * dur * 1000)
+        ok, fr = cap.read()
+        if not ok:
+            continue
+        crop = cv2.resize(fr[y:y + h, x:x + w], None, fx=2, fy=2)  # small faces: look closer
+        det = cv2.FaceDetectorYN.create(str(FACE_MODEL), "", (crop.shape[1], crop.shape[0]), 0.6)
+        _, faces = det.detect(crop)
+        seen += faces is not None and len(faces) > 0
+    cap.release()
+    return (x, y, w, h) if seen >= 2 else None
+
+
 def find_facecam(src: Path, dur: float):
     """(x, y, w, h) of the webcam box in source pixels, or None (faces must stay in one place)."""
     cap = cv2.VideoCapture(str(src))
@@ -108,9 +128,9 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text"
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
-def render(src: Path, out: Path, words, hook: str, streamer: str) -> Path:
+def render(src: Path, out: Path, words, hook: str, streamer: str, cam_box=None) -> Path:
     dur = duration(src)
-    cam = find_facecam(src, dur)
+    cam = (cam_box and known_cam(src, dur, cam_box)) or find_facecam(src, dur)
     ass = out.with_suffix(".ass")
     fonts = out.parent / "fonts"  # relative: Windows drive colons break the ass filter
     if not fonts.exists():
@@ -118,7 +138,7 @@ def render(src: Path, out: Path, words, hook: str, streamer: str) -> Path:
         shutil.copytree(FONTS, fonts)
     if cam:
         x, y, w, h = cam
-        vf = (f"[0:v]split[a][b];[a]crop={w}:{h}:{x}:{y},scale=1080:700[cam];"
+        vf = (f"[0:v]split[a][b];[a]crop={w}:{h}:{x}:{y},scale=1080:700:force_original_aspect_ratio=increase,crop=1080:700[cam];"
               "[b]scale=1080:1220:force_original_aspect_ratio=increase,crop=1080:1220[game];[cam][game]vstack[v]")
         write_ass(words, hook, f"KICK: {streamer}", dur, ass, cap_y=1380, hook_y=600)
     else:

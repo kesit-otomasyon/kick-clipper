@@ -144,7 +144,8 @@ def main():
                 done.add(k["id"])
                 continue
             log(f"görüntü {meta.get('visual')}/10: {meta.get('scene', '')}")
-            final = render.render(raw, out / f"{stamp}.mp4", words, meta.get("hook", ""), who)
+            final = render.render(raw, out / f"{stamp}.mp4", words, meta.get("hook", ""), who,
+                                  cfg.get("cams", {}).get(who))
             raw.unlink(missing_ok=True)
             title = meta.get("title") or f"{who} yayınından #shorts"
             desc = (f"{who} canlı yayınından bir an ({info['category']}).\n"

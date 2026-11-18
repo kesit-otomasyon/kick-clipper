@@ -4,6 +4,9 @@ streamers:            # kick.com/<ad>  (izin aldığın yayıncılar)
   - eray
   - rraenee
 
+cams:                  # yayıncının kamera kutusu [x, y, genişlik, yükseklik], ekranın oranı olarak
+  rraenee: [0.725, 0.13, 0.275, 0.28]   # sağ üst, grup kamerası (yüzler küçük, otomatik bulunamıyor)
+
 youtube_channel: clips          # credentials/token_clips.json (GitHub secret YT_TOKEN_CLIPS)
 
 clips:
