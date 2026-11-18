@@ -12,7 +12,7 @@ from pathlib import Path
 import requests
 import yaml
 
-from . import cam, render, youtube
+from . import cam, render, tiktok, youtube
 from .kick import H
 from .llm import LLM
 from .watch import describe, log
@@ -58,9 +58,12 @@ def jobs(reqs: list[dict], uploads: list[dict]) -> list[dict]:
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--dry-run", action="store_true")
+    ap.add_argument("--requests", default="redo.yaml")
+    ap.add_argument("--tiktok-only", action="store_true",
+                    help="make the listed Shorts again and send them to TikTok (draft); YouTube is not touched")
     args = ap.parse_args()
     cfg = yaml.safe_load((ROOT / "config.yaml").read_text(encoding="utf-8"))
-    reqs = yaml.safe_load((ROOT / "redo.yaml").read_text(encoding="utf-8")) or []
+    reqs = yaml.safe_load((ROOT / args.requests).read_text(encoding="utf-8")) or []
     channel = cfg["youtube_channel"]
     llm = LLM(cfg)
     out = ROOT / "out"
@@ -68,7 +71,7 @@ def main():
     uploads = youtube.recent_uploads(channel)
     for q in jobs(reqs, uploads):
         who, old, sec = q["streamer"], q["replace"], int(q.get("sec") or 0)
-        if any(f"redo:{old}" in u["description"] for u in uploads):
+        if not args.tiktok_only and any(f"redo:{old}" in u["description"] for u in uploads):
             log(f"{old}: zaten yeniden yapılmış, atlandı.")
             continue
         log(f"{old}: yeniden yapılıyor | {q.get('title', '')}")
@@ -111,6 +114,10 @@ def main():
                 + (f"clip:{q['clip']}\n" if q.get("clip") else "") + f"moment:{q['stream']}:{sec}\nredo:{old}")
         if args.dry_run:
             log(f"[deneme] hazır: {final.name} | {title} | kanca: {meta.get('hook', '')}")
+            continue
+        if args.tiktok_only:
+            tiktok.send({**cfg, "tiktok": {**cfg.get("tiktok", {}), "enabled": True}}, final,
+                        title.replace("#shorts", "#kick #keşfet"), log)
             continue
         vid = youtube.upload(channel, final, title, desc, meta.get("tags", []), 5)
         log(f"yeni hali yüklendi: https://youtu.be/{vid} | {title}")

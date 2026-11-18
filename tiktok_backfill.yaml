@@ -1,0 +1,9 @@
+# YouTube'daki kesitlerden TikTok'a (taslak) gönderilecekler. Bu dosya değişince "TikTok backfill" iş akışı çalışır.
+# Kesit, açıklamadaki an bilgisinden yeniden yapılır; YouTube'a dokunulmaz.
+# 18 Kasım: en çok izlenen 3 kesit
+- streamer: rraenee
+  replace: 5j2M5bvqFsw
+- streamer: eray
+  replace: Jew_7qzge8g
+- streamer: rraenee
+  replace: _8IlWoOUbgg
