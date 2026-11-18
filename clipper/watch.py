@@ -141,8 +141,13 @@ scene = what you see, one short English sentence.
    It must fit what is on screen.
 3) A Turkish YouTube title: max 55 chars, mentions {streamer}, ends with " #shorts", no swearing.
 4) 6-10 Turkish/English tags.
-Return JSON {{"ok": true|false, "reason": "...", "visual": 1-10, "scene": "...", "hook": "...", "title": "...",
-"tags": ["..."]}}""", images=frames)
+5) interest = 1-10: would a stranger who never watched this stream stop scrolling and watch to the end?
+   Something must HAPPEN: a real joke or funny line, a big reaction (shouting, laughing hard), a fail, a surprise,
+   an argument, a clutch play or a crazy game moment. Give 1-4 for plain gameplay (walking, driving, shopping,
+   menus, cutscene dialogue alone), people just chatting calmly, or when the words make no sense without context.
+   Be strict: most moments of a long stream are 3-5.
+Return JSON {{"ok": true|false, "reason": "...", "visual": 1-10, "interest": 1-10, "scene": "...", "hook": "...",
+"title": "...", "tags": ["..."]}}""", images=frames)
 
 
 def picture_ok(raw, c: dict) -> tuple[dict | None, str]:
@@ -383,7 +388,15 @@ class Worker:
             visual = float(meta.get("visual", 5))
         except (TypeError, ValueError):
             visual = 5.0
-        quality = round(m["strength"] * visual, 2)
+        try:
+            interest = float(meta.get("interest", 5))
+        except (TypeError, ValueError):
+            interest = 5.0
+        if interest < c.get("min_interest", 7):
+            log(f"ilginç değil ({sec} sn, {interest:.0f}/10): {meta.get('scene', '')}")
+            raw.unlink(missing_ok=True)
+            return
+        quality = round(m["strength"] * interest, 2)  # the picture already passed min_visual
         title = meta.get("title") or f"{who} yayınından #shorts"
         desc = (f"{who} canlı yayınından bir an ({info['category']}).\n"
                 f"Yayıncı: https://kick.com/{who}\n\n#{who} #kick #shorts\n\nmoment:{info['id']}:{sec}")

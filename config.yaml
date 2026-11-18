@@ -16,12 +16,13 @@ tiktok:                         # aynı kesit TikTok'a da gider (@efsaneyayinanl
 youtube_channel: clips          # credentials/token_clips.json (GitHub secret YT_TOKEN_CLIPS)
 
 clips:
-  per_streamer_per_day: 45      # yakalanan her iyi an yüklenir; yükleme kotası günde 100 çağrı (tanesi 1 birim)
-  per_day_total: 90             # 100'ün altında: yeniden yapım için pay; YouTube kanal sınırına gelirse o gün durur
+  per_streamer_per_day: 15      # yükleme kotası günde 100 çağrı; asıl sınır kalite (18 Kasım: 2 saatte 25 sıradan kesit gitti)
+  per_day_total: 30             # iki yayıncı için yeter; yeniden yapım için pay kalır
   cooldown_s: 150               # iki aday an arasında en az bu kadar saniye
   cam_every_min: 30             # kamera kutusu bu sıklıkta yeniden aranır (yayıncı düzeni değiştirirse)
-  pick_every_min: 2             # kısa pencere: eşiği geçen neredeyse her an yüklenir
-  min_quality: 12               # sadece iyi anlar: kalite = güç x görüntü puanı (18 Kasım: 45 adaydan ~15'i geçerdi)
+  pick_every_min: 20            # her 20 dakikada en iyi an (en fazla saatte 3); eşiği geçen yoksa hiçbiri
+  min_interest: 7               # Gemini: yabancı biri izler mi? (düz oynanış, sakin sohbet 3-5 alır)
+  min_quality: 9                # kalite = güç x ilginçlik
   viewer_clip_boost: 1.5        # izleyicilerin Kick'te kesit aldığı anın kalitesi bu kadar artar
   hold_weak_min: 6              # eşiğin altındaki an bu kadar dakika bekler (izleyiciler kesit alırsa geçebilir)
   before_s: 30                  # patlamadan önceki kısım (olayın başı)
@@ -45,6 +46,7 @@ clips:
 # Ana yöntem (2026-11-14): izleyicilerin Kick'te aldığı kesitler. Her 15 dakikada yeni olanlar alınır.
 viewer_clips:
   per_run: 2                    # bir çalışmada yayıncı başına en fazla bu kadar yeni kesit
+  min_interest: 6               # izleyici kesiti: Gemini ilginçlik puanı en az bu
   min_views: 15                  # en az bu kadar izlenmiş kesitler (boş/test kesitlerini eler)
   min_seconds: 8
   max_seconds: 60

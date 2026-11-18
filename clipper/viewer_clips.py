@@ -151,6 +151,15 @@ def main():
                 raw.unlink(missing_ok=True)
                 done.add(k["id"])
                 continue
+            try:
+                interest = float(meta.get("interest", 5))
+            except (TypeError, ValueError):
+                interest = 5.0
+            if interest < vc.get("min_interest", 6):  # viewers chose it, so the bar is a bit lower than live
+                log(f"ilginç değil ({k['id']}, {interest:.0f}/10): {meta.get('scene', '')}")
+                raw.unlink(missing_ok=True)
+                done.add(k["id"])
+                continue
             log(f"görüntü {meta.get('visual')}/10: {meta.get('scene', '')}")
             final = render.render(raw, out / f"{stamp}.mp4", words, meta.get("hook", ""), who, cams[who])
             raw.unlink(missing_ok=True)
