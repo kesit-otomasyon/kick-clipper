@@ -11,8 +11,8 @@ cams:                  # başlangıç kamera kutusu [x, y, genişlik, yükseklik
 youtube_channel: clips          # credentials/token_clips.json (GitHub secret YT_TOKEN_CLIPS)
 
 clips:
-  per_streamer_per_day: 3       # YouTube günde ~6 yükleme izin veriyor (proje kotası 10.000 / 1.600)
-  per_day_total: 6
+  per_streamer_per_day: 5       # yükleme artık ayrı kota (günde 100 çağrı, tanesi 1 birim); asıl sınır kanalın günlük yükleme hakkı
+  per_day_total: 10
   cooldown_s: 150               # iki aday an arasında en az bu kadar saniye
   cam_every_min: 30             # kamera kutusu bu sıklıkta yeniden aranır (yayıncı düzeni değiştirirse)
   pick_every_min: 30            # her 30 dakikada hazırlanan adayların en güçlüsü yüklenir (ilk anlar değil, en iyileri)

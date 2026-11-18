@@ -424,8 +424,16 @@ class Worker:
                 log("günlük toplam yükleme sınırı doldu.")
                 self._drop([best] + rest)
                 return
-            vid = youtube.upload(self.channel, best["file"], best["title"], best["desc"], best["tags"],
-                                 self.c["publish_delay_min"])
+            try:
+                vid = youtube.upload(self.channel, best["file"], best["title"], best["desc"], best["tags"],
+                                     self.c["publish_delay_min"])
+            except Exception as e:
+                if not youtube.limit_hit(e):
+                    raise
+                log(f"YouTube bugünkü yükleme hakkı doldu: {e}")
+                self.all_today = 10 ** 6  # stop for today
+                self._drop([best] + rest)
+                return
             log(f"yüklendi (kalite {best['quality']}, {len(rest)} aday elendi): https://youtu.be/{vid} | {best['title']}")
         self._drop([best] + rest)  # files are deleted only outside a dry run
         if self.dry:

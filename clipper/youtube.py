@@ -28,6 +28,11 @@ def service(channel: str):
 NET_ERRORS = (OSError, http.client.HTTPException, httplib2.HttpLib2Error)
 
 
+def limit_hit(e: Exception) -> bool:
+    """YouTube refused because the channel's (or project's) daily upload allowance is used up."""
+    return any(k in str(e) for k in ("uploadLimitExceeded", "quotaExceeded", "rateLimitExceeded"))
+
+
 def _retry(channel: str, call, tries: int = 4):
     """Runs call(service). A connection left idle for a long time breaks (BrokenPipe): rebuild and try again."""
     for k in range(tries):

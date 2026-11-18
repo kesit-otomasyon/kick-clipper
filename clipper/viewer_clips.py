@@ -164,7 +164,13 @@ def main():
             if args.dry_run:
                 log(f"[deneme] hazır: {final.name} | {title} | Kick'te {k.get('views')} izlenme")
             else:
-                vid = youtube.upload(channel, final, title, desc, meta.get("tags", []), c["publish_delay_min"])
+                try:
+                    vid = youtube.upload(channel, final, title, desc, meta.get("tags", []), c["publish_delay_min"])
+                except Exception as e:
+                    if not youtube.limit_hit(e):
+                        raise
+                    log(f"YouTube bugünkü yükleme hakkı doldu: {e}")
+                    return
                 log(f"yüklendi: https://youtu.be/{vid} | {title}")
                 final.unlink(missing_ok=True)
                 total_left -= 1
