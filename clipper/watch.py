@@ -249,10 +249,16 @@ def main():
     finally:
         rec.stop()
         meter.stop()
-        w.finish()
-    # tell the workflow whether to start the next shift
-    still = kick.live_info(who)
-    (ROOT / "still_live").write_text("1" if still and still["id"] == info["id"] else "0")
+        try:
+            w.finish()
+        finally:
+            # tell the workflow whether to start the next shift (also after a crash)
+            try:
+                still = kick.live_info(who)
+                live = bool(still and still["id"] == info["id"])
+            except Exception:
+                live = True  # unsure: better to start another shift, it stops by itself when offline
+            (ROOT / "still_live").write_text("1" if live else "0")
 
 
 class Worker:
@@ -358,38 +364,46 @@ class Worker:
         """At the end of each window, upload the strongest prepared moment."""
         if time.time() < self.window_end:
             return
-        self.window_end = time.time() + self.c.get("pick_every_min", 30) * 60
-        self._publish_best()
+        try:
+            self._publish_best()
+            self.window_end = time.time() + self.c.get("pick_every_min", 30) * 60
+        except Exception as e:  # keep the moments and try again in 3 minutes
+            log(f"yükleme başarısız, 3 dk sonra tekrar denenecek: {type(e).__name__}: {e}")
+            self.window_end = time.time() + 180
+
+    def _drop(self, items):
+        with self.lock:
+            self.ready = [r for r in self.ready if r not in items]
+        if not self.dry:  # the other moments of a window are dropped (kept only in a dry run)
+            for r in items:
+                r["file"].unlink(missing_ok=True)
 
     def _publish_best(self):
+        """Uploads the strongest prepared moment; on a network error everything stays for the next try."""
         with self.lock:
             if not self.ready:
                 return
             best = max(self.ready, key=lambda r: r["quality"])
             rest = [r for r in self.ready if r is not best]
-            self.ready = []
-        for r in rest:  # the other moments of this window are dropped (kept only in a dry run)
-            if not self.dry:
-                r["file"].unlink(missing_ok=True)
         if self.left() <= 0:
-            best["file"].unlink(missing_ok=True)
+            self._drop([best] + rest)
             return
         if not self.dry:
             uploads = youtube.recent_uploads(self.channel)
             self.done |= youtube.moments_done(uploads)
             if any(sid == self.info["id"] and abs(s - best["sec"]) < 60 for sid, s in self.done):
                 log("seçilen an bu arada yüklenmiş (izleyici kesiti), atlandı.")
-                best["file"].unlink(missing_ok=True)
+                self._drop([best])
                 return
             if youtube.uploads_today(uploads) >= self.c["per_day_total"]:
                 log("günlük toplam yükleme sınırı doldu.")
-                best["file"].unlink(missing_ok=True)
+                self._drop([best] + rest)
                 return
             vid = youtube.upload(self.channel, best["file"], best["title"], best["desc"], best["tags"],
                                  self.c["publish_delay_min"])
             log(f"yüklendi (kalite {best['quality']}, {len(rest)} aday elendi): https://youtu.be/{vid} | {best['title']}")
-            best["file"].unlink(missing_ok=True)
-        else:
+        self._drop([best] + rest)  # files are deleted only outside a dry run
+        if self.dry:
             log(f"[deneme] seçildi (kalite {best['quality']}, {len(rest)} aday elendi): {best['file'].name} | "
                 f"{best['title']}")
         self.made += 1
@@ -399,7 +413,13 @@ class Worker:
         """Stream over (or shift over): let the queue drain, then upload the best moment left."""
         self.q.put(None)
         self.thread.join(timeout=10 * 60)
-        self._publish_best()
+        for k in range(3):
+            try:
+                self._publish_best()
+                return
+            except Exception as e:
+                log(f"son yükleme başarısız ({k + 1}/3): {type(e).__name__}: {e}")
+                time.sleep(20)
 
 
 if __name__ == "__main__":

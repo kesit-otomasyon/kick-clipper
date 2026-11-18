@@ -1,8 +1,11 @@
 """YouTube: daily quota check, recent uploads (to skip moments already uploaded), scheduled upload."""
+import http.client
 import re
+import time
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
+import httplib2
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
@@ -22,12 +25,28 @@ def service(channel: str):
     return _yt[channel]
 
 
+NET_ERRORS = (OSError, http.client.HTTPException, httplib2.HttpLib2Error)
+
+
+def _retry(channel: str, call, tries: int = 4):
+    """Runs call(service). A connection left idle for a long time breaks (BrokenPipe): rebuild and try again."""
+    for k in range(tries):
+        try:
+            return call(service(channel))
+        except NET_ERRORS:
+            _yt.pop(channel, None)
+            if k == tries - 1:
+                raise
+            time.sleep(5 * (k + 1))
+
+
 def recent_uploads(channel: str, n: int = 50) -> list[dict]:
     """[{title, description, published}] of the newest uploads (1-2 quota units)."""
-    yt = service(channel)
-    up = yt.channels().list(part="contentDetails", mine=True).execute()["items"][0]
-    pl = up["contentDetails"]["relatedPlaylists"]["uploads"]
-    items = yt.playlistItems().list(part="snippet", playlistId=pl, maxResults=n).execute().get("items", [])
+    def call(yt):
+        up = yt.channels().list(part="contentDetails", mine=True).execute()["items"][0]
+        pl = up["contentDetails"]["relatedPlaylists"]["uploads"]
+        return yt.playlistItems().list(part="snippet", playlistId=pl, maxResults=n).execute().get("items", [])
+    items = _retry(channel, call)
     return [{"title": i["snippet"]["title"], "description": i["snippet"].get("description", ""),
              "published": i["snippet"]["publishedAt"]} for i in items]
 
@@ -54,9 +73,11 @@ def upload(channel: str, video: Path, title: str, description: str, tags: list[s
                         "categoryId": "20", "defaultLanguage": "tr", "defaultAudioLanguage": "tr"},
             "status": {"privacyStatus": "private", "publishAt": publish, "selfDeclaredMadeForKids": False,
                        "containsSyntheticMedia": False}}
-    req = service(channel).videos().insert(part="snippet,status", body=body,
-                                           media_body=MediaFileUpload(str(video), mimetype="video/mp4", resumable=True))
-    resp = None
-    while resp is None:
-        _, resp = req.next_chunk()
-    return resp["id"]
+    def call(yt):
+        req = yt.videos().insert(part="snippet,status", body=body,
+                                 media_body=MediaFileUpload(str(video), mimetype="video/mp4", resumable=True))
+        resp = None
+        while resp is None:
+            _, resp = req.next_chunk()
+        return resp["id"]
+    return _retry(channel, call, tries=3)
