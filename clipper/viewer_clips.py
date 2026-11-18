@@ -13,7 +13,7 @@ from pathlib import Path
 import requests
 import yaml
 
-from . import cam, kick, render, youtube
+from . import cam, kick, render, tiktok, youtube
 from .llm import LLM
 from .watch import describe, log, picture_ok, visual_ok
 
@@ -172,6 +172,7 @@ def main():
                     log(f"YouTube bugünkü yükleme hakkı doldu: {e}")
                     return
                 log(f"yüklendi: https://youtu.be/{vid} | {title}")
+                tiktok.send(cfg, final, title.replace("#shorts", "#kick #keşfet"), log)
                 final.unlink(missing_ok=True)
                 total_left -= 1
             done.add(k["id"])

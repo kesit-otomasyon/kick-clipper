@@ -1,10 +1,14 @@
 """TikTok: sign-in (once), token refresh, and posting a clip with the Content Posting API.
 
 Keys: credentials/tiktok_app.json {"client_key", "client_secret"} (GitHub: TIKTOK_CLIENT_KEY / TIKTOK_CLIENT_SECRET).
-Token: credentials/tiktok_token.json (GitHub: TIKTOK_TOKEN). The access token lives 2 hours, the refresh token
-180 days; every refresh returns a new refresh token, which is written back to the file.
+Token: the access token lives 2 hours, the refresh token 180 days; every refresh returns a new refresh token.
+  On the PC it is credentials/tiktok_token.json.
+  On GitHub it is kept encrypted in the repository variable TIKTOK_TOKEN_ENC (key: secret TIKTOK_TOKEN_KEY),
+  read and written back through the API with secret GH_VARS_PAT, so every job uses the newest refresh token.
 
-Until the app passes TikTok's audit, posts can only be private (SELF_ONLY).
+Until the app passes TikTok's audit, a public account can only get drafts in its TikTok inbox.
+
+  python -m clipper.tiktok seal              -> encrypts the local token for TIKTOK_TOKEN_ENC (prints it)
 
   python -m clipper.tiktok url               -> sign-in link (open it, allow, copy the address you land on)
   python -m clipper.tiktok code <address>    -> saves the token
@@ -12,7 +16,6 @@ Until the app passes TikTok's audit, posts can only be private (SELF_ONLY).
   python -m clipper.tiktok post <file.mp4> "caption"
 """
 import json
-import math
 import os
 import secrets
 import sys
@@ -36,8 +39,39 @@ def _app() -> dict:
     return json.loads(APP.read_text(encoding="utf-8"))
 
 
+REPO = "kesit-otomasyon/kick-clipper"
+VAR = "TIKTOK_TOKEN_ENC"
+
+
+def _remote() -> bool:
+    return bool(os.environ.get("GH_VARS_PAT") and os.environ.get("TIKTOK_TOKEN_KEY"))
+
+
+def _fernet():
+    from cryptography.fernet import Fernet
+    return Fernet(os.environ["TIKTOK_TOKEN_KEY"].encode())
+
+
+def _gh(method: str, path: str, **kw):
+    r = requests.request(method, f"https://api.github.com/repos/{REPO}/actions/variables{path}", timeout=30,
+                         headers={"Authorization": f"Bearer {os.environ['GH_VARS_PAT']}",
+                                  "Accept": "application/vnd.github+json"}, **kw)
+    if r.status_code >= 300:
+        raise RuntimeError(f"GitHub değişkeni {method} {path}: HTTP {r.status_code}")
+    return r
+
+
+def _load() -> dict:
+    if _remote():
+        return json.loads(_fernet().decrypt(_gh("GET", f"/{VAR}").json()["value"].encode()))
+    return json.loads(TOKEN.read_text(encoding="utf-8"))
+
+
 def _save(tok: dict):
     tok["saved_at"] = int(time.time())
+    if _remote():
+        _gh("PATCH", f"/{VAR}", json={"name": VAR, "value": _fernet().encrypt(json.dumps(tok).encode()).decode()})
+        return
     TOKEN.parent.mkdir(exist_ok=True)
     TOKEN.write_text(json.dumps(tok), encoding="utf-8")
 
@@ -65,9 +99,17 @@ def exchange(landed: str):
 
 
 def access_token() -> str:
-    tok = json.loads(TOKEN.read_text(encoding="utf-8"))
+    """The newest token is read every time (another job may have refreshed it); refreshed when near expiry."""
+    tok = _load()
     if time.time() > tok["saved_at"] + tok["expires_in"] - 300:
-        new = _oauth({"grant_type": "refresh_token", "refresh_token": tok["refresh_token"]})
+        try:
+            new = _oauth({"grant_type": "refresh_token", "refresh_token": tok["refresh_token"]})
+        except RuntimeError:
+            time.sleep(5)  # another job refreshed at the same moment: its token is the one to use
+            tok = _load()
+            if time.time() > tok["saved_at"] + tok["expires_in"] - 300:
+                raise
+            return tok["access_token"]
         _save(new)
         tok = new
     return tok["access_token"]
@@ -122,6 +164,24 @@ def post(video: Path, caption: str, public: bool = False, draft: bool = True) ->
     return d["publish_id"]
 
 
+def ready() -> bool:
+    """Are the TikTok keys and token here (PC file or GitHub secrets)?"""
+    keys = bool(os.environ.get("TIKTOK_CLIENT_KEY")) or APP.exists()
+    return keys and (_remote() or TOKEN.exists())
+
+
+def send(cfg: dict, video: Path, caption: str, log) -> None:
+    """After a YouTube upload: the same clip to TikTok (a draft until the app is audited). Never breaks the run."""
+    t = cfg.get("tiktok", {})
+    if not t.get("enabled") or not ready():
+        return
+    try:
+        pid = post(video, caption, public=t.get("public", False), draft=t.get("draft", True))
+        log(f"TikTok'a gönderildi ({'taslak' if t.get('draft', True) else 'paylaşım'}): {pid}")
+    except Exception as e:
+        log(f"TikTok'a gönderilemedi: {type(e).__name__}: {e}")
+
+
 def status(publish_id: str) -> str:
     return _call("/post/publish/status/fetch/", {"publish_id": publish_id}).get("status", "?")
 
@@ -133,6 +193,9 @@ if __name__ == "__main__":
     elif cmd == "code":
         exchange(sys.argv[2])
         print("token kaydedildi:", whoami())
+    elif cmd == "seal":  # TIKTOK_TOKEN_KEY must be set in the environment
+        from cryptography.fernet import Fernet
+        print(Fernet(os.environ["TIKTOK_TOKEN_KEY"].encode()).encrypt(TOKEN.read_bytes()).decode())
     elif cmd == "whoami":
         print(whoami())
     elif cmd == "post":

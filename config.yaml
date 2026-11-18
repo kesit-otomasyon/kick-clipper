@@ -8,6 +8,11 @@ cams:                  # başlangıç kamera kutusu [x, y, genişlik, yükseklik
   rraenee: [0.725, 0.13, 0.275, 0.28]   # sağ üst, grup kamerası (yüzler küçük, otomatik bulunamıyor)
   eray: [0.763, 0.092, 0.237, 0.237]       # sağ üst, grup kamerası
 
+tiktok:                         # aynı kesit TikTok'a da gider (@efsaneyayinanlari)
+  enabled: true
+  draft: true                   # uygulama onaylanana kadar: TikTok gelen kutusuna taslak, paylaşmak tek dokunuş
+  public: false                 # onaydan sonra draft: false + public: true -> doğrudan herkese açık
+
 youtube_channel: clips          # credentials/token_clips.json (GitHub secret YT_TOKEN_CLIPS)
 
 clips:
