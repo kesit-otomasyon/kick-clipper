@@ -124,6 +124,7 @@ scene = what you see, one short English sentence.
 {seen}
 1) Is it safe for YouTube? ok=false for: slurs or hate, sexual content, doxxing or private data, self-harm,
    gambling/casino, violence against real people. Normal swearing and game violence are fine.
+   Never set ok=false because a game looks new, unreleased or fake: judge only what is said and shown.
 2) A Turkish hook shown on top for the first seconds: max 5 words, makes people stay, no swearing, no emojis.
    It must fit what is on screen.
 3) A Turkish YouTube title: max 55 chars, mentions {streamer}, ends with " #shorts", no swearing.
@@ -275,6 +276,7 @@ class Worker:
         uploads = [] if dry else youtube.recent_uploads(self.channel)
         self.done = youtube.moments_done(uploads)
         self.mine_today = sum(f"kick.com/{who}" in u["description"] for u in uploads[:youtube.uploads_today(uploads)])
+        self.all_today = youtube.uploads_today(uploads)  # every upload today, live watch and viewer clips
         self.made = 0
         self.q: queue.Queue = queue.Queue()
         self.ready: list[dict] = []
@@ -287,7 +289,8 @@ class Worker:
     def left(self) -> int:
         if self.dry:
             return 99
-        return self.c["per_streamer_per_day"] - self.mine_today - self.made
+        return min(self.c["per_streamer_per_day"] - self.mine_today - self.made,
+                   self.c["per_day_total"] - self.all_today - self.made)
 
     def full(self) -> bool:
         """Nothing more can be uploaded today: stop watching (saves the runner)."""
@@ -397,7 +400,8 @@ class Worker:
                 log("seçilen an bu arada yüklenmiş (izleyici kesiti), atlandı.")
                 self._drop([best])
                 return
-            if youtube.uploads_today(uploads) >= self.c["per_day_total"]:
+            self.all_today = youtube.uploads_today(uploads) - self.made
+            if self.left() <= 0:
                 log("günlük toplam yükleme sınırı doldu.")
                 self._drop([best] + rest)
                 return
