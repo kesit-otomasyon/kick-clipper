@@ -11,11 +11,11 @@ cams:                  # başlangıç kamera kutusu [x, y, genişlik, yükseklik
 youtube_channel: clips          # credentials/token_clips.json (GitHub secret YT_TOKEN_CLIPS)
 
 clips:
-  per_streamer_per_day: 5       # yükleme artık ayrı kota (günde 100 çağrı, tanesi 1 birim); asıl sınır kanalın günlük yükleme hakkı
-  per_day_total: 10
+  per_streamer_per_day: 45      # yakalanan her iyi an yüklenir; yükleme kotası günde 100 çağrı (tanesi 1 birim)
+  per_day_total: 90             # 100'ün altında: yeniden yapım için pay; YouTube kanal sınırına gelirse o gün durur
   cooldown_s: 150               # iki aday an arasında en az bu kadar saniye
   cam_every_min: 30             # kamera kutusu bu sıklıkta yeniden aranır (yayıncı düzeni değiştirirse)
-  pick_every_min: 30            # her 30 dakikada hazırlanan adayların en güçlüsü yüklenir (ilk anlar değil, en iyileri)
+  pick_every_min: 2             # kısa pencere: kalite kontrolünden geçen neredeyse her an yüklenir
   before_s: 30                  # patlamadan önceki kısım (olayın başı)
   after_s: 15                   # patlamadan sonraki kısım (tepki)
   burst_db: 9.0                 # sesin, son 2 dakikanın ortancasından bu kadar dB yükselmesi = patlama
