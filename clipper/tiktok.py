@@ -196,6 +196,9 @@ if __name__ == "__main__":
     elif cmd == "seal":  # TIKTOK_TOKEN_KEY must be set in the environment
         from cryptography.fernet import Fernet
         print(Fernet(os.environ["TIKTOK_TOKEN_KEY"].encode()).encrypt(TOKEN.read_bytes()).decode())
+    elif cmd == "refresh":  # forces a refresh and writes the new token back (checks the whole chain)
+        _save(_oauth({"grant_type": "refresh_token", "refresh_token": _load()["refresh_token"]}))
+        print("yenilendi ve kaydedildi:", whoami())
     elif cmd == "whoami":
         print(whoami())
     elif cmd == "post":

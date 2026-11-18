@@ -1,0 +1,25 @@
+name: TikTok check
+# Checks the TikTok chain on GitHub: keys, encrypted token variable, refresh and write-back.
+on:
+  workflow_dispatch:
+  push:
+    paths: [".github/workflows/tiktok.yml"]
+concurrency: tiktok-check
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.11"
+      - run: pip install requests cryptography
+      - name: Refresh and write back
+        env:
+          TIKTOK_CLIENT_KEY: ${{ secrets.TIKTOK_CLIENT_KEY }}
+          TIKTOK_CLIENT_SECRET: ${{ secrets.TIKTOK_CLIENT_SECRET }}
+          TIKTOK_TOKEN_KEY: ${{ secrets.TIKTOK_TOKEN_KEY }}
+          GH_VARS_PAT: ${{ secrets.GH_VARS_PAT }}
+        run: |
+          python -m clipper.tiktok refresh
+          python -m clipper.tiktok whoami
