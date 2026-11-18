@@ -138,8 +138,16 @@ def render(src: Path, out: Path, words, hook: str, streamer: str, cam_box=None) 
         shutil.copytree(FONTS, fonts)
     if cam:
         x, y, w, h = cam
+        # the game part is cut from the middle, but moved so the webcam box is not in it twice
+        W = cv2.VideoCapture(str(src)).get(cv2.CAP_PROP_FRAME_WIDTH) or 1920
+        l, r = x / W, (x + w) / W
+        gx = "(iw-1080)/2"
+        if l > 0.5:
+            gx = f"max(0,min((iw-1080)/2,{l:.4f}*iw-1080))"
+        elif r < 0.5:
+            gx = f"min(iw-1080,max((iw-1080)/2,{r:.4f}*iw))"
         vf = (f"[0:v]split[a][b];[a]crop={w}:{h}:{x}:{y},scale=1080:700:force_original_aspect_ratio=increase,crop=1080:700[cam];"
-              "[b]scale=1080:1220:force_original_aspect_ratio=increase,crop=1080:1220[game];[cam][game]vstack[v]")
+              f"[b]scale=1080:1220:force_original_aspect_ratio=increase,crop=1080:1220:'{gx}':0[game];[cam][game]vstack[v]")
         write_ass(words, hook, f"KICK: {streamer}", dur, ass, cap_y=1380, hook_y=600)
     else:
         vf = ("[0:v]split[a][b];[a]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,"
