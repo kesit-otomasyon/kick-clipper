@@ -380,7 +380,7 @@ class Worker:
             ensure_ascii=False, indent=1), encoding="utf-8")
         with self.lock:
             self.ready.append({"sec": sec, "file": final, "title": title, "desc": desc,
-                               "tags": meta.get("tags", []), "quality": quality})
+                               "tags": meta.get("tags", []), "quality": quality, "t": time.time()})
         log(f"aday hazır ({sec} sn): kalite {quality} = güç {m['strength']:.2f} x görüntü {visual:.0f} | "
             f"{meta.get('scene', '')} | {title}")
 
@@ -402,13 +402,36 @@ class Worker:
             for r in items:
                 r["file"].unlink(missing_ok=True)
 
+    def _viewer_boost(self):
+        """A moment that viewers clipped on Kick is a good moment: its quality goes up (once)."""
+        with self.lock:
+            todo = [r for r in self.ready if not r.get("clipped")]
+        if not todo or self.dry:
+            return
+        try:
+            from .viewer_clips import clip_seconds, stream_clips  # (viewer_clips imports this module)
+            spans = [clip_seconds(k, self.info["started"]) for k in stream_clips(self.who, self.info["id"])]
+        except Exception as e:
+            log(f"izleyici kesitlerine bakılamadı: {type(e).__name__}: {e}")
+            return
+        boost = self.c.get("viewer_clip_boost", 1.5)
+        for r in todo:
+            n = sum(a - 30 <= r["sec"] <= b + 15 for a, b in spans)
+            if n:
+                r["clipped"] = True
+                r["quality"] = round(r["quality"] * boost, 2)
+                log(f"izleyiciler bu anı kesit almış ({n} kesit): kalite {r['quality']} | {r['title']}")
+
     def _publish_best(self):
         """Uploads the strongest prepared moment; on a network error everything stays for the next try."""
+        self._viewer_boost()
+        hold = self.c.get("hold_weak_min", 6) * 60  # a weak moment waits a little: viewers may still clip it
         with self.lock:
             if not self.ready:
                 return
             floor = self.c.get("min_quality", 0)
-            weak = [r for r in self.ready if r["quality"] < floor]
+            waiting = [r for r in self.ready if r["quality"] < floor and time.time() - r.get("t", 0) < hold]
+            weak = [r for r in self.ready if r["quality"] < floor and r not in waiting]
             good = [r for r in self.ready if r["quality"] >= floor]
         for r in weak:
             log(f"zayıf an elendi (kalite {r['quality']} < {floor}): {r['title']}")
@@ -416,7 +439,7 @@ class Worker:
             self._drop(weak)
             return
         best = max(good, key=lambda r: r["quality"])
-        rest = [r for r in good + weak if r is not best]
+        rest = [r for r in good + weak + waiting if r is not best]
         if self.left() <= 0:
             self._drop([best] + rest)
             return

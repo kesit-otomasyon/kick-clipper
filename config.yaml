@@ -17,6 +17,8 @@ clips:
   cam_every_min: 30             # kamera kutusu bu sıklıkta yeniden aranır (yayıncı düzeni değiştirirse)
   pick_every_min: 2             # kısa pencere: eşiği geçen neredeyse her an yüklenir
   min_quality: 12               # sadece iyi anlar: kalite = güç x görüntü puanı (18 Kasım: 45 adaydan ~15'i geçerdi)
+  viewer_clip_boost: 1.5        # izleyicilerin Kick'te kesit aldığı anın kalitesi bu kadar artar
+  hold_weak_min: 6              # eşiğin altındaki an bu kadar dakika bekler (izleyiciler kesit alırsa geçebilir)
   before_s: 30                  # patlamadan önceki kısım (olayın başı)
   after_s: 15                   # patlamadan sonraki kısım (tepki)
   burst_db: 9.0                 # sesin, son 2 dakikanın ortancasından bu kadar dB yükselmesi = patlama
