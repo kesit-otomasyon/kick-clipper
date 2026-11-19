@@ -1,8 +1,5 @@
 # YouTube'daki kesitlerden TikTok'a (taslak) gönderilecekler. Bu dosya değişince "TikTok backfill" iş akışı çalışır.
 # Kesit, açıklamadaki an bilgisinden yeniden yapılır; YouTube'a dokunulmaz. Listede sadece yeni gönderilecekler durur.
-# 19 Kasım (3. tur, tekrar - taslaklar paylaşıldı): 2. turda "çok fazla bekleyen taslak" yüzünden gidemeyen ikisi
-# (gönderildi: 5j2M5bvqFsw, Jew_7qzge8g, _8IlWoOUbgg, BTVwXrJNgTg, AT4mmLzt3X8, kULFB9lFHOQ, 14hZJ43QpvY)
+# 19 Kasım: Uzi'nin eray'in yayınına geldiği an (öncelikli). Şarkı kesiti Redo işi yüklerken TikTok'a kendisi gidiyor.
 - streamer: eray
-  replace: aNcagA8i2nY     # eray Uçak Görevinde Zor Anlar Yaşıyor
-- streamer: rraenee
-  replace: 2EDE7gSwqls     # rraenee ile GTA'da Polis Kovalamacası
+  replace: khXYVj5Jk9g     # Uzi Eray'ın Yayınına Geldi!
