@@ -181,7 +181,8 @@ def main():
                     log(f"YouTube bugünkü yükleme hakkı doldu: {e}")
                     return
                 log(f"yüklendi: https://youtu.be/{vid} | {title}")
-                tiktok.send(cfg, final, title.replace("#shorts", "#kick #keşfet"), log)
+                tiktok.send(cfg, final, title.replace("#shorts", "#kick #keşfet"), log,
+                            score=interest, floor_key="min_interest")
                 final.unlink(missing_ok=True)
                 total_left -= 1
             done.add(k["id"])

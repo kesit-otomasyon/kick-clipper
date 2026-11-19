@@ -121,11 +121,11 @@ def main():
             continue
         if args.tiktok_only:
             tiktok.send({**cfg, "tiktok": {**cfg.get("tiktok", {}), "enabled": True}}, final,
-                        title.replace("#shorts", "#kick #keşfet"), log)
+                        title.replace("#shorts", "#kick #keşfet"), log, manual=True)
             continue
         vid = youtube.upload(channel, final, title, desc, meta.get("tags", []), 5)
         log(f"yüklendi: https://youtu.be/{vid} | {title}")
-        tiktok.send(cfg, final, title.replace("#shorts", "#kick #keşfet"), log)
+        tiktok.send(cfg, final, title.replace("#shorts", "#kick #keşfet"), log, manual=True)
         if old:
             youtube.delete(channel, old)
             log(f"eski hali silindi: {old}")

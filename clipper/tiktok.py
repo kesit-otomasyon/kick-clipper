@@ -69,6 +69,10 @@ def _load() -> dict:
 
 def _save(tok: dict):
     tok["saved_at"] = int(time.time())
+    _save_raw(tok)
+
+
+def _save_raw(tok: dict):
     if _remote():
         _gh("PATCH", f"/{VAR}", json={"name": VAR, "value": _fernet().encrypt(json.dumps(tok).encode()).decode()})
         return
@@ -110,6 +114,7 @@ def access_token() -> str:
             if time.time() > tok["saved_at"] + tok["expires_in"] - 300:
                 raise
             return tok["access_token"]
+        new["sent"] = tok.get("sent", {})  # the daily send count survives the refresh
         _save(new)
         tok = new
     return tok["access_token"]
@@ -170,16 +175,52 @@ def ready() -> bool:
     return keys and (_remote() or TOKEN.exists())
 
 
-def send(cfg: dict, video: Path, caption: str, log) -> None:
-    """After a YouTube upload: the same clip to TikTok (a draft until the app is audited). Never breaks the run."""
+def _today() -> str:
+    return time.strftime("%Y-%m-%d", time.gmtime())
+
+
+def sent_today() -> int:
+    """TikTok sends today (UTC), kept next to the token so every job sees the same count."""
+    try:
+        return int(_load().get("sent", {}).get(_today(), 0))
+    except Exception:
+        return 0
+
+
+def _count_send():
+    tok = _load()
+    tok["sent"] = {_today(): int(tok.get("sent", {}).get(_today(), 0)) + 1}  # only today's count is kept
+    _save_raw(tok)  # saved_at stays: it is the token's age, used for its expiry
+
+
+def send(cfg: dict, video: Path, caption: str, log, score: float | None = None, floor_key: str = "",
+         manual: bool = False) -> None:
+    """After a YouTube upload: the same clip to TikTok (a draft until the app is audited). Never breaks the run.
+    TikTok allows an unaudited app only a few uploads a day, so automatic sends are kept for the best clips:
+    at most tiktok.per_day a day, and only when score >= tiktok[floor_key]. Manual requests (a Short asked for
+    by hand) skip both checks, so they can always use the room that is left."""
     t = cfg.get("tiktok", {})
     if not t.get("enabled") or not ready():
         return
+    if not manual:
+        floor = t.get(floor_key) if floor_key else None
+        if floor is not None and score is not None and score < floor:
+            log(f"TikTok'a gönderilmedi: puan {score} < {floor} (günlük az hak, sadece en iyiler)")
+            return
+        n = sent_today()
+        if n >= t.get("per_day", 99):
+            log(f"TikTok'a gönderilmedi: bugünkü otomatik hak doldu ({n}/{t.get('per_day')})")
+            return
     try:
         pid = post(video, caption, public=t.get("public", False), draft=t.get("draft", True))
         log(f"TikTok'a gönderildi ({'taslak' if t.get('draft', True) else 'paylaşım'}): {pid}")
     except Exception as e:
         log(f"TikTok'a gönderilemedi: {type(e).__name__}: {e}")
+        return
+    try:
+        _count_send()
+    except Exception as e:
+        log(f"TikTok sayacı yazılamadı: {type(e).__name__}: {e}")
 
 
 def status(publish_id: str) -> str:

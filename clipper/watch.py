@@ -491,7 +491,8 @@ class Worker:
                 self._drop([best] + rest)
                 return
             log(f"yüklendi (kalite {best['quality']}, {len(weak)} zayıf aday elendi): https://youtu.be/{vid} | {best['title']}")
-            tiktok.send(self.cfg, best["file"], best["title"].replace("#shorts", "#kick #keşfet"), log)
+            tiktok.send(self.cfg, best["file"], best["title"].replace("#shorts", "#kick #keşfet"), log,
+                        score=best["quality"], floor_key="min_quality")
         self._drop([best] + weak)  # other good moments wait for the next window; files deleted only outside a dry run
         if self.dry:
             log(f"[deneme] seçildi (kalite {best['quality']}, {len(rest)} aday elendi): {best['file'].name} | "
