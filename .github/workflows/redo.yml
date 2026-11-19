@@ -1,8 +1,6 @@
 name: Redo Shorts
 
 on:
-  schedule:
-    - cron: "30 8 * * *"   # once a day after the YouTube quota resets (a request that failed is tried again)
   push:
     branches: [main]
     paths: [redo.yaml]

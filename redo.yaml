@@ -1,34 +1,7 @@
 # Yeniden yapılacak kesitler: yayın kaydından tekrar kesilir, yeni hali yüklenir, sonra eski hali silinir.
-# Bu dosya değişince "Redo Shorts" iş akışı çalışır. Yapılmış olanlar atlanır.
-- streamer: rraenee
-  stream: "138540372"      # Kick yayın kimliği
-  sec: 1909                # yayının kaçıncı saniyesi
-  replace: psxLWyzJE6o     # eski Short (kamerasız)
-  title: "rraenee GTA 6 Soygun Sahnesini İzliyor #shorts"
-  category: Grand Theft Auto VI (GTA)
-
-# eray'in bugünkü bütün kesitleri (açıklamadaki an bilgisinden bulunur)
-- streamer: eray
-  date: "2026-11-18"
-  stream: "138529992"      # izleyici kesitlerini bulmak için
-  category: Grand Theft Auto VI (GTA)
-
-# ilk yeniden yapımda tam ekran kameraya yanlış kutu uygulandı: bir kez daha
-- streamer: eray
-  replace: fj1c__sGVbk
-- streamer: eray
-  replace: mg_0hSp9oyk
-
-# sabahki eski kodlu izleme kamerasız yükledi
-- streamer: rraenee
-  stream: "138540372"
-  sec: 9870
-  replace: 4bmzASWv_7k
-  title: "rraenee ile GTA'da Polis Kovalamacası #shorts"
-  category: Grand Theft Auto VI (GTA)
-- streamer: rraenee         # ilk yeniden yapımda kamera bulunamadı (tek kareye bakılmıştı): bir kez daha
-  stream: "138540372"
-  sec: 9870
-  replace: VJ6eyfx1avg
-  title: "rraenee ile GTA'da Polis Kovalamacası #shorts"
-  category: Grand Theft Auto VI (GTA)
+# Bu dosya değişince "Redo Shorts" iş akışı çalışır (zamanlanmış çalışma yok). Sadece yeni istekleri yaz;
+# yapılmış istekler listede kalırsa yeniden işlenebilir.
+# Örnek:
+# - streamer: rraenee
+#   replace: <YouTube video id>
+[]
