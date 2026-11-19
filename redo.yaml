@@ -1,10 +1,10 @@
 # Yeniden yapılacak / yeni kesitler: yayın kaydından kesilir. replace varsa eski hali silinir, yoksa yeni Short olur.
 # Bu dosya değişince "Redo Shorts" iş akışı çalışır (zamanlanmış çalışma yok). Sadece yeni istekleri yaz.
-# 19 Kasım: Uzi tam 08:00:50'de geliyor (kullanıcı söyledi) -> 28850. sn, geldiği an + sonraki ~50 sn
+# 19 Kasım: eray Uzi'nin yeni şarkısını dinliyor, 08:32:20'nin 6 sn öncesinden (kullanıcı söyledi) -> 30734. sn
 - streamer: eray
   stream: "138842022"
-  sec: 28850
-  before_s: 8
-  after_s: 52
-  title: "Uzi Eray'ın Yayınına Geldi! #shorts"
+  sec: 30740
+  before_s: 6
+  after_s: 54
+  title: "Eray Uzi'nin Yeni Şarkısını Dinliyor! #shorts"
   category: Grand Theft Auto VI (GTA)
