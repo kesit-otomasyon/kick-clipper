@@ -32,8 +32,8 @@ def recording(slug: str, stream_id: str) -> dict:
 def jobs(reqs: list[dict], uploads: list[dict]) -> list[dict]:
     out = []
     for q in reqs:
-        if "replace" in q and "sec" in q:  # fully written request
-            out.append(q)
+        if "sec" in q and ("replace" in q or "stream" in q):  # fully written request (no replace = a new Short)
+            out.append({**q, "replace": q.get("replace"), "stream": str(q.get("stream", ""))})
             continue
         for u in uploads:
             d = u["description"]
@@ -71,10 +71,13 @@ def main():
     uploads = youtube.recent_uploads(channel)
     for q in jobs(reqs, uploads):
         who, old, sec = q["streamer"], q["replace"], int(q.get("sec") or 0)
-        if not args.tiktok_only and any(f"redo:{old}" in u["description"] for u in uploads):
+        if old is None and any(f"moment:{q['stream']}:{sec}" in u["description"] for u in uploads):
+            log(f"{who} {sec}. saniye zaten yüklenmiş, atlandı.")
+            continue
+        if old and not args.tiktok_only and any(f"redo:{old}" in u["description"] for u in uploads):
             log(f"{old}: zaten yeniden yapılmış, atlandı.")
             continue
-        log(f"{old}: yeniden yapılıyor | {q.get('title', '')}")
+        log(f"{old or 'yeni'}: yapılıyor | {q.get('title', '')}")
         try:
             if q.get("clip"):  # a viewer clip: its own video
                 r = requests.get(f"https://kick.com/api/v2/clips/{q['clip']}", headers=H, timeout=30)
@@ -90,7 +93,7 @@ def main():
         except Exception as e:
             log(f"{old}: kaynak bulunamadı: {type(e).__name__}: {e}")
             continue
-        stamp = f"{who}_redo_{old}"
+        stamp = f"{who}_redo_{old or q['stream'] + '_' + str(sec)}"
         raw = out / f"{stamp}_raw.mp4"
         subprocess.run(["ffmpeg", "-v", "error", "-y", "-ss", str(a), "-i", src, "-t", str(b - a),
                         "-c:v", "libx264", "-preset", "veryfast", "-crf", "18", "-c:a", "aac", str(raw)], check=True)
@@ -111,7 +114,8 @@ def main():
         raw.unlink(missing_ok=True)
         title = q.get("title") or meta.get("title") or f"{who} yayınından #shorts"
         desc = (f"{who} canlı yayınından bir an.\nYayıncı: https://kick.com/{who}\n\n#{who} #kick #shorts\n\n"
-                + (f"clip:{q['clip']}\n" if q.get("clip") else "") + f"moment:{q['stream']}:{sec}\nredo:{old}")
+                + (f"clip:{q['clip']}\n" if q.get("clip") else "") + f"moment:{q['stream']}:{sec}"
+                + (f"\nredo:{old}" if old else ""))
         if args.dry_run:
             log(f"[deneme] hazır: {final.name} | {title} | kanca: {meta.get('hook', '')}")
             continue
@@ -120,9 +124,11 @@ def main():
                         title.replace("#shorts", "#kick #keşfet"), log)
             continue
         vid = youtube.upload(channel, final, title, desc, meta.get("tags", []), 5)
-        log(f"yeni hali yüklendi: https://youtu.be/{vid} | {title}")
-        youtube.delete(channel, old)
-        log(f"eski hali silindi: {old}")
+        log(f"yüklendi: https://youtu.be/{vid} | {title}")
+        tiktok.send(cfg, final, title.replace("#shorts", "#kick #keşfet"), log)
+        if old:
+            youtube.delete(channel, old)
+            log(f"eski hali silindi: {old}")
 
 
 if __name__ == "__main__":

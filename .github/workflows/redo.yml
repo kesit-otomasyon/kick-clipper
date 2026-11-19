@@ -58,6 +58,10 @@ jobs:
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          TIKTOK_CLIENT_KEY: ${{ secrets.TIKTOK_CLIENT_KEY }}
+          TIKTOK_CLIENT_SECRET: ${{ secrets.TIKTOK_CLIENT_SECRET }}
+          TIKTOK_TOKEN_KEY: ${{ secrets.TIKTOK_TOKEN_KEY }}
+          GH_VARS_PAT: ${{ secrets.GH_VARS_PAT }}
         run: python -m clipper.redo ${{ inputs.dry_run && '--dry-run' || '' }}
 
       - name: Keep test Shorts
