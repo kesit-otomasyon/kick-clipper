@@ -1,5 +1,5 @@
 # YouTube'daki kesitlerden TikTok'a (taslak) gönderilecekler. Bu dosya değişince "TikTok backfill" iş akışı çalışır.
 # Kesit, açıklamadaki an bilgisinden yeniden yapılır; YouTube'a dokunulmaz. Listede sadece yeni gönderilecekler durur.
-# 19 Kasım: Uzi'nin eray'in yayınına geldiği an (öncelikli; tekrar, müzik kesiti paylaşıldı)
+# 19 Kasım: Uzi'nin eray'in yayınına geldiği an (öncelikli; dosyası da indirilebilsin diye tekrar)
 - streamer: eray
   replace: khXYVj5Jk9g     # Uzi Eray'ın Yayınına Geldi!

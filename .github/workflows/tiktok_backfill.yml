@@ -58,3 +58,12 @@ jobs:
           TIKTOK_TOKEN_KEY: ${{ secrets.TIKTOK_TOKEN_KEY }}
           GH_VARS_PAT: ${{ secrets.GH_VARS_PAT }}
         run: python -m clipper.redo --requests tiktok_backfill.yaml --tiktok-only
+
+      - name: Keep the Shorts (to upload by hand when TikTok refuses)
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: tiktok-shorts-${{ github.run_id }}
+          path: out/*.mp4
+          if-no-files-found: ignore
+          retention-days: 7
