@@ -1,7 +1,10 @@
-# Yeniden yapılacak kesitler: yayın kaydından tekrar kesilir, yeni hali yüklenir, sonra eski hali silinir.
-# Bu dosya değişince "Redo Shorts" iş akışı çalışır (zamanlanmış çalışma yok). Sadece yeni istekleri yaz;
-# yapılmış istekler listede kalırsa yeniden işlenebilir.
-# Örnek:
-# - streamer: rraenee
-#   replace: <YouTube video id>
-[]
+# Yeniden yapılacak / yeni kesitler: yayın kaydından kesilir. replace varsa eski hali silinir, yoksa yeni Short olur.
+# Bu dosya değişince "Redo Shorts" iş akışı çalışır (zamanlanmış çalışma yok). Sadece yeni istekleri yaz.
+# 19 Kasım: eray'in yayınına şarkıcı Uzi geliyor (izleyici kesitleri "Eray yayına uzi geliyor", "UZİ GELİYO OYY")
+- streamer: eray
+  stream: "138842022"
+  sec: 29090
+  before_s: 35
+  after_s: 25
+  title: "Eray'ın Yayınına Uzi Geliyor! #shorts"
+  category: Grand Theft Auto VI (GTA)
