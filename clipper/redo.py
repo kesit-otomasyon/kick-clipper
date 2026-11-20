@@ -12,7 +12,7 @@ from pathlib import Path
 import requests
 import yaml
 
-from . import cam, render, tiktok, youtube
+from . import cam, notify, render, tiktok, youtube
 from .kick import H
 from .llm import LLM
 from .watch import describe, log
@@ -120,8 +120,11 @@ def main():
             log(f"[deneme] hazır: {final.name} | {title} | kanca: {meta.get('hook', '')}")
             continue
         if args.tiktok_only:
-            tiktok.send({**cfg, "tiktok": {**cfg.get("tiktok", {}), "enabled": True}}, final,
-                        title.replace("#shorts", "#kick #keşfet"), log, manual=True)
+            if cfg.get("tiktok", {}).get("enabled"):
+                tiktok.send(cfg, final, title.replace("#shorts", "#kick #keşfet"), log, manual=True)
+            else:  # TikTok's API is paused: the clip goes to the phone to be posted by hand
+                notify.alert({**cfg, "notify": {**cfg.get("notify", {}), "enabled": True, "top_min_quality": 0}},
+                             final, title, f"https://youtu.be/{old}" if old else "", 99, "min_quality", log)
             continue
         vid = youtube.upload(channel, final, title, desc, meta.get("tags", []), 5)
         log(f"yüklendi: https://youtu.be/{vid} | {title}")
