@@ -1,7 +1,22 @@
-# YouTube'daki kesitlerden TikTok'a (taslak) gönderilecekler. Bu dosya değişince "TikTok backfill" iş akışı çalışır.
+# YouTube'daki kesitlerden TikTok'a gönderilecekler. Bu dosya değişince "TikTok backfill" iş akışı çalışır.
 # Kesit, açıklamadaki an bilgisinden yeniden yapılır; YouTube'a dokunulmaz. Listede sadece yeni gönderilecekler durur.
-# 20 Kasım: bugünkü en iyi iki eray kesiti -> telefona (dosya GitHub sürümünden linkle)
+# TikTok API'si durdurulduğu sürece her kesit telefona (ntfy) dosya linkiyle gider.
+# 20 Kasım: kullanıcının seçtiği 9 kesit
+- streamer: hype
+  replace: xhcw_nT-lxc     # Hype Gece Sürüşünde Delirdi
+- streamer: hype
+  replace: Xa-l7A7rvXY     # Hype Yanlış Eve Girdi
 - streamer: eray
-  replace: -zp6tdJSe1E     # eray ile GTA VI Motosiklet Yarışı (11.43)
+  replace: 0ygp64xRo4Q     # eray Limanda Ortalığı Karıştırdı
+- streamer: rraenee
+  replace: MDTO8vC5M58     # rraenee GTA 6 Aşık Dünyayı Keşfediyor
+- streamer: rraenee
+  replace: 1oQX5pVfMuU     # rraenee ile GTA sokaklarında kavga
+- streamer: rraenee
+  replace: K-4c9UIE74Y     # rraenee GTA 6 Market Soygunu Yapıyor
 - streamer: eray
-  replace: c3GTc4iPHlc     # Eray GTA'da Ortalığı Karıştırıyor! (10.53)
+  replace: QkMG3_QXCPA     # Eray İmzalı Ronaldo ve Messi Forması Aldı
+- streamer: eray
+  replace: RGaug76_1F4     # Eray GTA VI Oynarken Kaplan Saldırısına Uğradı
+- streamer: rraenee
+  replace: _hpqS-maTmE     # rraenee Canlı Yayında Çok Şaşırdı
