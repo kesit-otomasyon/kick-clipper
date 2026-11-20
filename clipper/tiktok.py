@@ -193,6 +193,13 @@ def _count_send():
     _save_raw(tok)  # saved_at stays: it is the token's age, used for its expiry
 
 
+def _note(log, msg: str):
+    """Logs, and on GitHub also shows it on the run page (readable without opening the log)."""
+    log(msg)
+    if os.environ.get("GITHUB_ACTIONS"):
+        print(f"::notice title=TikTok::{msg}", flush=True)
+
+
 def send(cfg: dict, video: Path, caption: str, log, score: float | None = None, floor_key: str = "",
          manual: bool = False) -> None:
     """After a YouTube upload: the same clip to TikTok (a draft until the app is audited). Never breaks the run.
@@ -205,17 +212,17 @@ def send(cfg: dict, video: Path, caption: str, log, score: float | None = None, 
     if not manual:
         floor = t.get(floor_key) if floor_key else None
         if floor is not None and score is not None and score < floor:
-            log(f"TikTok'a gönderilmedi: puan {score} < {floor} (günlük az hak, sadece en iyiler)")
+            _note(log, f"TikTok'a gönderilmedi: puan {score} < {floor} (günlük az hak, sadece en iyiler)")
             return
         n = sent_today()
         if n >= t.get("per_day", 99):
-            log(f"TikTok'a gönderilmedi: bugünkü otomatik hak doldu ({n}/{t.get('per_day')})")
+            _note(log, f"TikTok'a gönderilmedi: bugünkü otomatik hak doldu ({n}/{t.get('per_day')})")
             return
     try:
         pid = post(video, caption, public=t.get("public", False), draft=t.get("draft", True))
-        log(f"TikTok'a gönderildi ({'taslak' if t.get('draft', True) else 'paylaşım'}): {pid}")
+        _note(log, f"TikTok'a gönderildi ({'taslak' if t.get('draft', True) else 'paylaşım'}): {pid}")
     except Exception as e:
-        log(f"TikTok'a gönderilemedi: {type(e).__name__}: {e}")
+        _note(log, f"TikTok'a gönderilemedi: {type(e).__name__}: {e}")
         return
     try:
         _count_send()
