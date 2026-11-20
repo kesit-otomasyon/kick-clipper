@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write          # the 'telefon' release holds clips for the phone alerts
 
 concurrency:
   group: tiktok-backfill
@@ -57,6 +57,7 @@ jobs:
           TIKTOK_CLIENT_SECRET: ${{ secrets.TIKTOK_CLIENT_SECRET }}
           TIKTOK_TOKEN_KEY: ${{ secrets.TIKTOK_TOKEN_KEY }}
           GH_VARS_PAT: ${{ secrets.GH_VARS_PAT }}
+          GITHUB_TOKEN: ${{ github.token }}
         run: python -m clipper.redo --requests tiktok_backfill.yaml --tiktok-only
 
       - name: Keep the Shorts (to upload by hand when TikTok refuses)

@@ -1,6 +1,6 @@
 # YouTube'daki kesitlerden TikTok'a (taslak) gönderilecekler. Bu dosya değişince "TikTok backfill" iş akışı çalışır.
 # Kesit, açıklamadaki an bilgisinden yeniden yapılır; YouTube'a dokunulmaz. Listede sadece yeni gönderilecekler durur.
-# 20 Kasım: bugünkü en iyi iki eray kesiti -> telefona (TikTok API durduruldu)
+# 20 Kasım: bugünkü en iyi iki eray kesiti -> telefona (dosya GitHub sürümünden linkle)
 - streamer: eray
   replace: -zp6tdJSe1E     # eray ile GTA VI Motosiklet Yarışı (11.43)
 - streamer: eray

@@ -11,12 +11,12 @@ import hashlib
 import os
 import subprocess
 import sys
+import time
 from pathlib import Path
 
 import requests
 
 ROOT = Path(__file__).resolve().parent.parent
-MAX_MB = 14  # ntfy.sh attachment limit is 15 MB
 
 
 def topic() -> str | None:
@@ -41,6 +41,35 @@ def _count(add: bool = False) -> int:
         return 0
 
 
+RELEASE = "telefon"  # one public release that holds the latest clips for the phone
+
+
+def host(video: Path) -> str | None:
+    """Puts the clip on the repo's 'telefon' release and returns its download link (None when not on GitHub).
+    The clips are public YouTube Shorts anyway; only the newest 20 are kept."""
+    token, repo = os.environ.get("GITHUB_TOKEN"), os.environ.get("GITHUB_REPOSITORY")
+    if not token or not repo:
+        return None
+    api = f"https://api.github.com/repos/{repo}"
+    h = {"Authorization": f"Bearer {token}", "Accept": "application/vnd.github+json"}
+    r = requests.get(f"{api}/releases/tags/{RELEASE}", headers=h, timeout=30)
+    if r.status_code == 404:
+        r = requests.post(f"{api}/releases", headers=h, timeout=30, json={
+            "tag_name": RELEASE, "name": "Telefon kesitleri",
+            "body": "TikTok'a elle yüklemek için kesitler (bildirimle gelir). En yeni 20 tanesi tutulur."})
+    r.raise_for_status()
+    rel = r.json()
+    assets = sorted(rel.get("assets", []), key=lambda a: a["created_at"])
+    for a in assets[:-19]:
+        requests.delete(f"{api}/releases/assets/{a['id']}", headers=h, timeout=30)
+    name = f"{time.strftime('%m%d-%H%M%S')}-{video.stem[:40]}.mp4"
+    up = rel["upload_url"].split("{")[0]
+    r = requests.post(up, params={"name": name}, data=video.read_bytes(), timeout=300,
+                      headers={**h, "Content-Type": "video/mp4"})
+    r.raise_for_status()
+    return r.json()["browser_download_url"]
+
+
 def small_copy(video: Path) -> Path:
     """A copy under MAX_MB for the phone (60 s at ~1.6 Mbit/s)."""
     out = video.with_name(video.stem + "_tel.mp4")
@@ -62,17 +91,13 @@ def alert(cfg: dict, video: Path, title: str, link: str, score: float, floor_key
         log(f"telefona bildirilmedi: bugünkü {sent} bildirim doldu (puan {score:.1f})")
         return
     try:
-        small = small_copy(video)
-        if small.stat().st_size > MAX_MB * 2**20:
-            small = None
         q = {"title": f"{'🔥 Çok iyi! ' if top else ''}TikTok'a yükle ({score:.1f})", "click": link, "tags": "fire",
              "message": f"{title} | {link} | Dosyayı kaydet, TikTok'ta paylaş."}
-        url = f"https://ntfy.sh/{t}"
-        if small:
-            r = requests.put(url, params={**q, "filename": "kesit.mp4"}, data=small.read_bytes(), timeout=120)
-            small.unlink(missing_ok=True)
-        else:
-            r = requests.post(url, params=q, timeout=30)
+        url = host(video)  # ntfy.sh takes only ~2 MB attachments: the mp4 is linked from a GitHub release
+        if url:  # tapping the alert opens the file; the YouTube link stays in the text
+            q.update({"attach": url, "filename": "kesit.mp4", "click": url,
+                      "message": f"{title} | Dosya: {url} | YouTube: {link}"})
+        r = requests.post(f"https://ntfy.sh/{t}", params=q, timeout=30)
         log(f"telefona bildirildi (puan {score:.1f}): HTTP {r.status_code}")
         if r.ok:
             _count(add=True)
