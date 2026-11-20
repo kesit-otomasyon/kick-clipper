@@ -27,6 +27,20 @@ def topic() -> str | None:
     return "efsane-kesit-" + hashlib.sha256(key.encode()).hexdigest()[:20] if key else None
 
 
+def _count(add: bool = False) -> int:
+    """Alerts sent today, kept with the encrypted TikTok token (shared by every job). 0 when unknown."""
+    try:
+        from .tiktok import _load, _save_raw, _today
+        tok = _load()
+        n = int(tok.get("notified", {}).get(_today(), 0))
+        if add:
+            tok["notified"] = {_today(): n + 1}
+            _save_raw(tok)
+        return n
+    except Exception:
+        return 0
+
+
 def small_copy(video: Path) -> Path:
     """A copy under MAX_MB for the phone (60 s at ~1.6 Mbit/s)."""
     out = video.with_name(video.stem + "_tel.mp4")
@@ -42,11 +56,16 @@ def alert(cfg: dict, video: Path, title: str, link: str, score: float, floor_key
     t = topic()
     if not n.get("enabled") or not t or score < n.get(floor_key, 99):
         return
+    top = score >= n.get("top_" + floor_key, 99)  # a standout always comes, even past the daily count
+    sent = _count()
+    if not top and sent >= n.get("per_day", 99):
+        log(f"telefona bildirilmedi: bugünkü {sent} bildirim doldu (puan {score:.1f})")
+        return
     try:
         small = small_copy(video)
         if small.stat().st_size > MAX_MB * 2**20:
             small = None
-        q = {"title": f"TikTok'a yükle ({score:.1f})", "click": link, "tags": "fire",
+        q = {"title": f"{'🔥 Çok iyi! ' if top else ''}TikTok'a yükle ({score:.1f})", "click": link, "tags": "fire",
              "message": f"{title} | {link} | Dosyayı kaydet, TikTok'ta paylaş."}
         url = f"https://ntfy.sh/{t}"
         if small:
@@ -55,6 +74,8 @@ def alert(cfg: dict, video: Path, title: str, link: str, score: float, floor_key
         else:
             r = requests.post(url, params=q, timeout=30)
         log(f"telefona bildirildi (puan {score:.1f}): HTTP {r.status_code}")
+        if r.ok:
+            _count(add=True)
     except Exception as e:
         log(f"telefona bildirilemedi: {type(e).__name__}: {e}")
 

@@ -114,7 +114,8 @@ def access_token() -> str:
             if time.time() > tok["saved_at"] + tok["expires_in"] - 300:
                 raise
             return tok["access_token"]
-        new["sent"] = tok.get("sent", {})  # the daily send count survives the refresh
+        for k in ("sent", "notified"):  # the daily counts survive the refresh
+            new[k] = tok.get(k, {})
         _save(new)
         tok = new
     return tok["access_token"]

@@ -9,10 +9,13 @@ cams:                  # başlangıç kamera kutusu [x, y, genişlik, yükseklik
   rraenee: [0.725, 0.13, 0.275, 0.28]   # sağ üst, grup kamerası (yüzler küçük, otomatik bulunamıyor)
   eray: [0.763, 0.092, 0.237, 0.237]       # sağ üst, grup kamerası
 
-notify:                         # çok iyi kesit: telefona bildirim + dosya (ntfy uygulaması), TikTok'a elle yüklemek için
+notify:                         # TikTok'a elle yüklenecek kesitler: telefona bildirim + dosya (ntfy uygulaması)
   enabled: true
-  min_quality: 13               # canlı kesit (kalite = güç x ilginçlik; 20 Kasım'da en iyiler 10-11.4 aldı)
-  min_interest: 8               # izleyici kesiti (Gemini ilginçlik puanı)
+  per_day: 3                    # günde en fazla bu kadar (çok iyiler bu sayıya takılmaz)
+  min_quality: 10               # canlı kesit (kalite = güç x ilginçlik; 20 Kasım'da en iyiler 10-11.4 aldı)
+  min_interest: 7               # izleyici kesiti (Gemini ilginçlik puanı)
+  top_min_quality: 13           # bundan yüksekse "Çok iyi!" diye her zaman gelir
+  top_min_interest: 8
 
 tiktok:                         # aynı kesit TikTok'a da gider (@efsaneyayinanlari)
   enabled: false                # 20 Kasım: TikTok API'si sürekli "bekleyen paylaşım" diye reddediyor; elle yükleme (notify)
