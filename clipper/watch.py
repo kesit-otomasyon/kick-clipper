@@ -23,7 +23,7 @@ from pathlib import Path
 import numpy as np
 import yaml
 
-from . import cam, kick, render, tiktok, youtube
+from . import cam, kick, notify, render, tiktok, youtube
 from .chat import ChatMeter
 from .llm import LLM
 
@@ -493,6 +493,8 @@ class Worker:
             log(f"yüklendi (kalite {best['quality']}, {len(weak)} zayıf aday elendi): https://youtu.be/{vid} | {best['title']}")
             tiktok.send(self.cfg, best["file"], best["title"].replace("#shorts", "#kick #keşfet"), log,
                         score=best["quality"], floor_key="min_quality")
+            notify.alert(self.cfg, best["file"], best["title"], f"https://youtu.be/{vid}", best["quality"],
+                         "min_quality", log)
         self._drop([best] + weak)  # other good moments wait for the next window; files deleted only outside a dry run
         if self.dry:
             log(f"[deneme] seçildi (kalite {best['quality']}, {len(rest)} aday elendi): {best['file'].name} | "

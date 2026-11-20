@@ -13,7 +13,7 @@ from pathlib import Path
 import requests
 import yaml
 
-from . import cam, kick, render, tiktok, youtube
+from . import cam, kick, notify, render, tiktok, youtube
 from .llm import LLM
 from .watch import describe, log, picture_ok, visual_ok
 
@@ -183,6 +183,7 @@ def main():
                 log(f"yüklendi: https://youtu.be/{vid} | {title}")
                 tiktok.send(cfg, final, title.replace("#shorts", "#kick #keşfet"), log,
                             score=interest, floor_key="min_interest")
+                notify.alert(cfg, final, title, f"https://youtu.be/{vid}", interest, "min_interest", log)
                 final.unlink(missing_ok=True)
                 total_left -= 1
             done.add(k["id"])
