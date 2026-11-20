@@ -13,7 +13,7 @@ tiktok:                         # aynı kesit TikTok'a da gider (@efsaneyayinanl
   draft: true                   # uygulama onaylanana kadar: TikTok gelen kutusuna taslak, paylaşmak tek dokunuş
   public: false                 # onaydan sonra draft: false + public: true -> doğrudan herkese açık
   per_day: 3                    # TikTok onaysız uygulamaya günde ~5 yükleme veriyor: otomatik en fazla 3, kalanı elle istenenlere
-  min_quality: 12               # canlı kesit TikTok'a ancak kalite bu kadarsa gider (YouTube eşiği 7)
+  min_quality: 10               # canlı kesit TikTok'a ancak kalite bu kadarsa gider (20 Kasım: 12 hiçbirini geçirmedi, kesitler 9.7-11.4)
   min_interest: 7               # izleyici kesiti TikTok'a ancak ilginçlik bu kadarsa gider (YouTube eşiği 5)
 
 youtube_channel: clips          # credentials/token_clips.json (GitHub secret YT_TOKEN_CLIPS)
