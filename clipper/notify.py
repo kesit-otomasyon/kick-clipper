@@ -62,7 +62,8 @@ def host(video: Path) -> str | None:
     assets = sorted(rel.get("assets", []), key=lambda a: a["created_at"])
     for a in assets[:-19]:
         requests.delete(f"{api}/releases/assets/{a['id']}", headers=h, timeout=30)
-    name = f"{time.strftime('%m%d-%H%M%S')}-{video.stem[:40]}.mp4"
+    stem = "".join(ch if ch.isalnum() or ch in "-_" else "_" for ch in video.stem)[:40]
+    name = f"kesit-{time.strftime('%m%d-%H%M%S')}-{stem}.mp4"
     up = rel["upload_url"].split("{")[0]
     r = requests.post(up, params={"name": name}, data=video.read_bytes(), timeout=300,
                       headers={**h, "Content-Type": "video/mp4"})
@@ -95,7 +96,8 @@ def alert(cfg: dict, video: Path, title: str, link: str, score: float, floor_key
              "message": f"{title} | {link} | Dosyayı kaydet, TikTok'ta paylaş."}
         url = host(video)  # ntfy.sh takes only ~2 MB attachments: the mp4 is linked from a GitHub release
         if url:  # tapping the alert opens the file; the YouTube link stays in the text
-            q.update({"attach": url, "filename": "kesit.mp4", "click": url,
+            # a different name per clip: the same name twice is saved as "kesit.mp4 (1)", which TikTok rejects
+            q.update({"attach": url, "filename": url.rsplit("/", 1)[-1], "click": url,
                       "message": f"{title} | Dosya: {url} | YouTube: {link}"})
         r = requests.post(f"https://ntfy.sh/{t}", params=q, timeout=30)
         log(f"telefona bildirildi (puan {score:.1f}): HTTP {r.status_code}")

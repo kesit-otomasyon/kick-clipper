@@ -1,7 +1,7 @@
 # YouTube'daki kesitlerden TikTok'a gönderilecekler. Bu dosya değişince "TikTok backfill" iş akışı çalışır.
 # Kesit, açıklamadaki an bilgisinden yeniden yapılır; YouTube'a dokunulmaz. Listede sadece yeni gönderilecekler durur.
 # TikTok API'si durdurulduğu sürece her kesit telefona (ntfy) dosya linkiyle gider.
-# 20 Kasım: kullanıcının seçtiği 9 kesit
+# 20 Kasım: kullanıcının seçtiği 9 kesit (her dosyanın adı farklı, .mp4 ile biter)
 - streamer: hype
   replace: xhcw_nT-lxc     # Hype Gece Sürüşünde Delirdi
 - streamer: hype
