@@ -1,0 +1,31 @@
+name: Live sentinel
+# Starts the live watcher within about a minute of a streamer going live (scheduled runs come 30-120 min late).
+# Runs ~5.8 hours, then starts its own next shift; the hourly schedule restarts it if that chain ever breaks.
+
+on:
+  schedule:
+    - cron: "41 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: write            # to start watch.yml and its own next shift
+
+concurrency:
+  group: sentinel
+  cancel-in-progress: false
+
+jobs:
+  sentinel:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.11"
+      - run: pip install -q requests pyyaml
+      - name: Watch who goes live
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: python -m clipper.sentinel
