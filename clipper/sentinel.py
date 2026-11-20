@@ -39,19 +39,29 @@ def watching(who: str) -> bool:
     return False
 
 
+def current_streamers(last: list[str]) -> list[str]:
+    """The streamer list from config.yaml on main (not the copy checked out when this shift began)."""
+    try:
+        r = requests.get(f"https://raw.githubusercontent.com/{REPO}/main/config.yaml", timeout=20)
+        r.raise_for_status()
+        return yaml.safe_load(r.text)["streamers"]
+    except Exception:
+        return last or yaml.safe_load((ROOT / "config.yaml").read_text(encoding="utf-8"))["streamers"]
+
+
 def dispatch(workflow: str, inputs: dict | None = None) -> bool:
     r = gh("POST", f"/actions/workflows/{workflow}/dispatches", json={"ref": "main", "inputs": inputs or {}})
     return r.status_code == 204
 
 
 def main():
-    cfg = yaml.safe_load((ROOT / "config.yaml").read_text(encoding="utf-8"))
-    streamers = cfg["streamers"]
+    streamers = current_streamers([])
     end = time.time() + float(os.environ.get("SENTINEL_HOURS", "5.8")) * 3600
     started: dict[str, float] = {}  # last time a watcher was started for a streamer
     was_live: dict[str, bool] = {}
     log(f"nöbet başladı: {', '.join(streamers)}")
     while time.time() < end:
+        streamers = current_streamers(streamers)  # a streamer added to config.yaml is followed within a minute
         for who in streamers:
             try:
                 live = live_info(who) is not None

@@ -3,6 +3,7 @@
 streamers:            # kick.com/<ad>  (izin aldığın yayıncılar)
   - eray
   - rraenee
+  - hype                # 20 Kasım'da eklendi (567 bin takipçi)
 
 cams:                  # başlangıç kamera kutusu [x, y, genişlik, yükseklik]; izleme 30 dk'da bir kendisi yeniden bulur
   rraenee: [0.725, 0.13, 0.275, 0.28]   # sağ üst, grup kamerası (yüzler küçük, otomatik bulunamıyor)
@@ -20,7 +21,7 @@ youtube_channel: clips          # credentials/token_clips.json (GitHub secret YT
 
 clips:
   per_streamer_per_day: 15      # yükleme kotası günde 100 çağrı; asıl sınır kalite (18 Kasım: 2 saatte 25 sıradan kesit gitti)
-  per_day_total: 30             # iki yayıncı için yeter; yeniden yapım için pay kalır
+  per_day_total: 45             # üç yayıncı x 15; yeniden yapım için pay kalır
   cooldown_s: 150               # iki aday an arasında en az bu kadar saniye
   cam_every_min: 30             # kamera kutusu bu sıklıkta yeniden aranır (yayıncı düzeni değiştirirse)
   pick_every_min: 20            # her 20 dakikada en iyi an (en fazla saatte 3); eşiği geçen yoksa hiçbiri
